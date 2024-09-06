@@ -18,4 +18,6 @@ public interface EmployeeService {
 
 	void editAgentDetails(Long agentId, AgentRequestDto agentRequestDto);
 
+	String verifyCustomerById(Long customerId);
+
 }

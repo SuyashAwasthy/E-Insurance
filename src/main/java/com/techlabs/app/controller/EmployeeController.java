@@ -14,9 +14,16 @@ import org.springframework.web.bind.annotation.RestController;
 import com.techlabs.app.dto.AgentRequestDto;
 import com.techlabs.app.dto.CustomerRequestDto;
 import com.techlabs.app.dto.EmployeeRequestDto;
+import com.techlabs.app.dto.VerificationDto;
+import com.techlabs.app.entity.Customer;
+import com.techlabs.app.entity.PendingVerification;
+import com.techlabs.app.exception.APIException;
+import com.techlabs.app.repository.CustomerRepository;
+import com.techlabs.app.repository.PendingVerificationRepository;
 import com.techlabs.app.service.AdminService;
 import com.techlabs.app.service.EmployeeService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 
 @RestController
@@ -25,6 +32,12 @@ import jakarta.validation.Valid;
 public class EmployeeController {
 	 @Autowired
 	    private EmployeeService employeeService;
+	 
+	 @Autowired
+	    private CustomerRepository customerRepository;
+
+	    @Autowired
+	    private PendingVerificationRepository pendingVerificationRepository;
 	 
 	
 
@@ -63,4 +76,36 @@ public class EmployeeController {
 //	        return ResponseEntity.ok(reports); 
 //	    } 
 	 
+//	    @PostMapping("/verifyCustomer/{customerId}")
+//	    public ResponseEntity<String> verifyCustomer(@PathVariable Long customerId) {
+//	        String response = employeeService.verifyCustomerById(customerId);
+//	        return ResponseEntity.ok(response);
+//	    }
+	    @Operation(summary = "employee verification for customer")
+	    @PutMapping("/verify-customer/{customerId}")
+	    public ResponseEntity<String> verifyCustomer(@PathVariable Long customerId, @RequestBody VerificationDto verificationDto) {
+	        PendingVerification pendingVerification = pendingVerificationRepository.findByCustomerId(customerId)
+	                .orElseThrow(() -> new APIException(HttpStatus.NOT_FOUND, "Verification request not found"));
+
+	        if (!pendingVerification.getPanCard().equals(verificationDto.getPanCard())) {
+	            throw new APIException(HttpStatus.BAD_REQUEST, "PAN Card number does not match");
+	        }
+	        if (!pendingVerification.getAadhaarCard().equals(verificationDto.getAadhaarCard())) {
+	            throw new APIException(HttpStatus.BAD_REQUEST, "Aadhaar Card number does not match");
+	        }
+
+	        // Find and update the Customer entity
+	        Customer customer = customerRepository.findById(customerId)
+	                .orElseThrow(() -> new APIException(HttpStatus.NOT_FOUND, "Customer not found"));
+
+	        customer.setVerified(true);
+	        customerRepository.save(customer);
+
+	        // Mark the pending verification as complete
+	        pendingVerification.setVerified(true);
+	        pendingVerificationRepository.save(pendingVerification);
+
+	        return ResponseEntity.ok("Customer verified successfully");
+	    }
+	    
 	}

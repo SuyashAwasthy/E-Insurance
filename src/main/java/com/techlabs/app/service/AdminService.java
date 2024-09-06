@@ -8,6 +8,7 @@ import com.techlabs.app.dto.AgentRequestDto;
 import com.techlabs.app.dto.AgentResponseDto;
 import com.techlabs.app.dto.CityRequest;
 import com.techlabs.app.dto.CityResponse;
+import com.techlabs.app.dto.ClaimResponseDto;
 import com.techlabs.app.dto.EmployeeRequestDto;
 import com.techlabs.app.dto.EmployeeResponseDto;
 import com.techlabs.app.dto.InsurancePlanDTO;
@@ -62,6 +63,8 @@ public interface AdminService{
 	
 	String verifyAgent(Long agentId);
 		//Insurance type,plan
+	
+	String approveAgentClaim(Long claimId, ClaimResponseDto claimDto);
 	
 	
 	//Insurance

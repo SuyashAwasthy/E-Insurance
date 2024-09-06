@@ -14,7 +14,7 @@ import lombok.Setter;
 @Entity
 public class SubmittedDocument {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotBlank

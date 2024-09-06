@@ -49,6 +49,8 @@ public class SecurityConfig {
                 .requestMatchers("/E-Insurance/auth/**").permitAll()
                 .requestMatchers("/E-Insurance/admin/**").permitAll()
                 .requestMatchers("/E-Insurance/employee/**").permitAll()
+                .requestMatchers("/E-Insurance/customer/**").permitAll()
+                .requestMatchers("/E-Insurance/agent/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs").permitAll()
                 .anyRequest().authenticated()
             )

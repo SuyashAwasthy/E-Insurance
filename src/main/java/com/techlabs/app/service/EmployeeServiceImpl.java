@@ -106,9 +106,32 @@ public class EmployeeServiceImpl implements EmployeeService{
 	    public void updateProfile(Long employeeId, EmployeeRequestDto employeeRequestDto) { 
 	    	 Employee employee = employeeRepository.findById(employeeId) 
 	                 .orElseThrow(() -> new EntityNotFoundException("Employee not found")); 
+	    	 if(employeeRequestDto.getFirstName()!=null)
 	             employee.setFirstName(employeeRequestDto.getFirstName()); 
+	    	 if(employeeRequestDto.getLastName()!=null)
 	             employee.setLastName(employeeRequestDto.getLastName()); 
 	             employeeRepository.save(employee); 
+//	             if(employeeRequestDto.getUsername()!=null )
+//	            	    user.setUsername(employeeRequestDto.getUsername());
+//	            	    if(employeeRequestDto.getEmail()!=null )
+//	            	    user.setEmail(employeeRequestDto.getEmail());
+//	            	    if (employeeRequestDto.getPassword() != null && !employeeRequestDto.getPassword().isEmpty()) {
+//	            	        user.setPassword(passwordEncoder.encode(employeeRequestDto.getPassword()));
+//	            	    }
+//
+//	            	    if(employeeRequestDto.getFirstName()!=null )
+//	            	    employee.setFirstName(employeeRequestDto.getFirstName());
+//	            	    if(employeeRequestDto.getLastName()!=null )
+//
+//	            	    employee.setLastName(employeeRequestDto.getLastName());
+//	            	  //  employee.setPhoneNumber(employeeRequestDto.getPhoneNumber());
+//	            	   // if(employeeRequestDto.isActive() )
+//	            	    employee.setActive(employeeRequestDto.isActive());
+//
+//	            	    userRepository.save(user);
+//	            	    employeeRepository.save(employee);
+//
+//	            	    return "Employee updated successfully";
 	    }
 
 
@@ -163,7 +186,41 @@ public class EmployeeServiceImpl implements EmployeeService{
 		        // State handling if applicable 
 		 
 		        agentRepository.save(agent); 
-		} 
+		}
+
+
+
+		@Override
+		public String verifyCustomerById(Long customerId) {
+			 Customer customer = customerRepository.findById(customerId)
+		                .orElseThrow(() -> new APIException(HttpStatus.NOT_FOUND, "Customer with ID not found"));
+
+			 System.out.println("Customer ID being set: " + customer.getCustomerId());
+			 System.out.println("no-----------------");
+			 
+		        
+//		        String panCard = customer.getPanCard();
+//		        String aadhaarCard = customer.getAadhaarCard(); 
+//
+//		        
+//		        if (panCard == null && panCard.isEmpty()) {
+//		            throw new APIException(HttpStatus.BAD_REQUEST, "Customer cannot be verified without a PAN card");
+//		        }
+//		        if (aadhaarCard == null && aadhaarCard.isEmpty()) {
+//		            throw new APIException(HttpStatus.BAD_REQUEST, "Customer cannot be verified without an Aadhaar card");
+//		        }
+
+		        
+		        if (customer.isVerified()) {
+		            throw new APIException(HttpStatus.BAD_REQUEST, "Customer is already verified");
+		        }
+
+		        
+		        customer.setVerified(true);
+		        customerRepository.save(customer);
+
+		        return "Customer with PAN card "; //+ panCard + " and Aadhaar card " + aadhaarCard + " verified successfully";
+		    }
 	
 	
 	}

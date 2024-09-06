@@ -34,6 +34,18 @@ public class Agent {
 	private Set<Commission> commissions;
 
 	private boolean verified = false;
+	
+	 private double totalCommission;
+
+//	public void setTotalCommission(double totalCommission) {
+//		// TODO Auto-generated method stub
+//		
+//	}
+//
+//	public double getTotalCommission() {
+//		// TODO Auto-generated method stub
+//		return 0;
+//	}
 
 //	@OneToMany(mappedBy = "agent", cascade = CascadeType.ALL)
 //	private Set<InsurancePolicy> insurancePolicies = new HashSet<>();

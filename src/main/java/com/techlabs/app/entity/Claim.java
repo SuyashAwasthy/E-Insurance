@@ -12,6 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -22,7 +23,7 @@ import java.time.LocalDateTime;
 @Data
 public class Claim {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
@@ -50,7 +51,9 @@ public class Claim {
     private LocalDateTime date = LocalDateTime.now();
 
     private String claimedStatus = ClaimStatus.PENDING.name();
-
+    
+    @Column(name="is_cancel",nullable=false)
+    private boolean isCancel;
     @OneToOne
     @JoinColumn(name = "policyId")
     private InsurancePolicy policy;
@@ -65,6 +68,6 @@ public class Claim {
 	}
 
 	
-    
+	
 
 }

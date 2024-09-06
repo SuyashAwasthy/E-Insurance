@@ -15,7 +15,7 @@ public class Transaction {
     private long transactionId;
 
     @ManyToOne
-    @JoinColumn(name = "policy_id", nullable = false)
+    @JoinColumn(name = "insurance_id", nullable = false)
     private InsurancePolicy insurancePolicy;
 
     @Column(nullable = false)

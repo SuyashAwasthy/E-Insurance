@@ -17,9 +17,12 @@ public class RegisterDto {
     private String email;
     private String password;
     private LocalDate dob;
-    private long phone_number;
+    private Long phone_number;
     private Set<String> roles;
     private Long cityId; // Add this field
+    
+    private String panCard;       // Add PAN Card field
+    private String aadhaarCard;   // Add Aadhaar Card field
 
     
 	

@@ -13,7 +13,7 @@ import jakarta.persistence.Table;
 import lombok.Data; 
  
 @Entity 
-@Data 
+
 @Table(name = "commissions") 
 public class Commission { 
  
@@ -34,13 +34,57 @@ public class Commission {
  
     @Column(nullable = false) 
     private LocalDateTime date;
-
-	
-
-
-
-	
-	 
- 
     
+    @Column(nullable = false)
+    private String CommissionType;
+
+	public Long getCommissionId() {
+		return commissionId;
+	}
+
+	public void setCommissionId(Long commissionId) {
+		this.commissionId = commissionId;
+	}
+
+	public Agent getAgent() {
+		return agent;
+	}
+
+	public void setAgent(Agent agent) {
+		this.agent = agent;
+	}
+
+	public InsurancePolicy getInsurancePolicy() {
+		return insurancePolicy;
+	}
+
+	public void setInsurancePolicy(InsurancePolicy insurancePolicy) {
+		this.insurancePolicy = insurancePolicy;
+	}
+
+	public Double getAmount() {
+		return amount;
+	}
+
+	public void setAmount(Double amount) {
+		this.amount = amount;
+	}
+
+	public LocalDateTime getDate() {
+		return date;
+	}
+
+	public void setDate(LocalDateTime date) {
+		this.date = date;
+	}
+
+	public String getCommissionType() {
+		return CommissionType;
+	}
+
+	public void setCommissionType(String commissionType) {
+		CommissionType = commissionType;
+	}
+	
+
 }

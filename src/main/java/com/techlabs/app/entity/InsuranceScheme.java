@@ -11,7 +11,7 @@ public class InsuranceScheme {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long insuranceSchemeId;
+    private Long insuranceSchemeId;
 
     @Column(nullable = false)
     private String insuranceScheme;

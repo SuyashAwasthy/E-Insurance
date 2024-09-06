@@ -19,6 +19,7 @@ import com.techlabs.app.dto.AgentRequestDto;
 import com.techlabs.app.dto.AgentResponseDto;
 import com.techlabs.app.dto.CityRequest;
 import com.techlabs.app.dto.CityResponse;
+import com.techlabs.app.dto.ClaimResponseDto;
 import com.techlabs.app.dto.EmployeeRequestDto;
 import com.techlabs.app.dto.EmployeeResponseDto;
 import com.techlabs.app.dto.InsurancePlanDTO;
@@ -220,13 +221,13 @@ public class AdminController {
     			return new ResponseEntity<>(response, HttpStatus.CREATED);
     		}
 
-    		@Operation(summary = "Create Insurance Policy")
-    		@PostMapping("/createPolicy")
-    		public ResponseEntity<String> createInsurancePolicy(@RequestBody InsurancePolicyDto insurancePolicyDto) {
-    			logger.info("Creating insurance policy: {}", insurancePolicyDto);
-    			String response = adminService.createInsurancePolicy(insurancePolicyDto);
-    			return new ResponseEntity<>(response, HttpStatus.CREATED);
-    		}
+//    		@Operation(summary = "Create Insurance Policy")
+//    		@PostMapping("/createPolicy")
+//    		public ResponseEntity<String> createInsurancePolicy(@RequestBody InsurancePolicyDto insurancePolicyDto) {
+//    			logger.info("Creating insurance policy: {}", insurancePolicyDto);
+//    			String response = adminService.createInsurancePolicy(insurancePolicyDto);
+//    			return new ResponseEntity<>(response, HttpStatus.CREATED);
+//    		}
     		
     		@PutMapping("updateInsurancePlan/{planId}")
     	    @Operation(summary = "Update Insurance Plan")
@@ -373,6 +374,12 @@ public class AdminController {
 
   	          return new ResponseEntity<>(response, HttpStatus.OK);
   	      }
+    	  
+    	    @PostMapping("/approveClaim/{claimId}")
+    	    public ResponseEntity<String> approveClaim(@PathVariable Long claimId,ClaimResponseDto claimDto){
+    	    String result=adminService.approveAgentClaim(claimId, claimDto);	
+    	    return new ResponseEntity<>(result,HttpStatus.OK);
+    	    }
     	    
     	    
 }

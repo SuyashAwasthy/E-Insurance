@@ -22,6 +22,7 @@ import com.techlabs.app.dto.AgentResponseDto;
 import com.techlabs.app.dto.CityRequest;
 import com.techlabs.app.dto.CityResponse;
 import com.techlabs.app.dto.CityResponseDto;
+import com.techlabs.app.dto.ClaimResponseDto;
 import com.techlabs.app.dto.EmployeeRequestDto;
 import com.techlabs.app.dto.EmployeeResponseDto;
 import com.techlabs.app.dto.InsurancePlanDTO;
@@ -35,6 +36,7 @@ import com.techlabs.app.dto.UserResponseDto;
 import com.techlabs.app.entity.Agent;
 import com.techlabs.app.entity.City;
 import com.techlabs.app.entity.Claim;
+import com.techlabs.app.entity.ClaimStatus;
 import com.techlabs.app.entity.Commission;
 import com.techlabs.app.entity.Customer;
 import com.techlabs.app.entity.Employee;
@@ -49,11 +51,13 @@ import com.techlabs.app.entity.SubmittedDocument;
 import com.techlabs.app.entity.TaxSetting;
 import com.techlabs.app.entity.User;
 import com.techlabs.app.exception.APIException;
+import com.techlabs.app.exception.AgentNotFoundException;
 import com.techlabs.app.exception.BankApiException;
 import com.techlabs.app.exception.ResourceNotFoundException;
 import com.techlabs.app.repository.AdministratorRepository;
 import com.techlabs.app.repository.AgentRepository;
 import com.techlabs.app.repository.CityRepository;
+import com.techlabs.app.repository.ClaimRepository;
 import com.techlabs.app.repository.EmployeeRepository;
 import com.techlabs.app.repository.InsurancePlanRepository;
 import com.techlabs.app.repository.InsurancePolicyRepository;
@@ -91,13 +95,17 @@ private InsurancePolicyRepository insurancePolicyRepository;
 @Autowired
 private InsuranceSchemeRepository insuranceSchemeRepository;
 
-    
+@Autowired
+private ClaimRepository claimRespository;
 
-	
+
+   
 	public AdminServiceImpl(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder,
 		EmployeeRepository employeeRepository, AgentRepository agentRepository, CityRepository cityRepository,
 		TaxSettingRepository taxSettingRepository, StateRepository stateRepository,
-		InsurancePlanRepository insurancePlanRepository, AdministratorRepository adminrepository) {
+		InsurancePlanRepository insurancePlanRepository, AdministratorRepository adminrepository,
+		InsurancePolicyRepository insurancePolicyRepository, InsuranceSchemeRepository insuranceSchemeRepository,
+		ClaimRepository claimRespository) {
 	super();
 	this.userRepository = userRepository;
 	this.roleRepository = roleRepository;
@@ -109,6 +117,9 @@ private InsuranceSchemeRepository insuranceSchemeRepository;
 	this.stateRepository = stateRepository;
 	this.insurancePlanRepository = insurancePlanRepository;
 	this.adminrepository = adminrepository;
+	this.insurancePolicyRepository = insurancePolicyRepository;
+	this.insuranceSchemeRepository = insuranceSchemeRepository;
+	this.claimRespository = claimRespository;
 }
 
 
@@ -157,7 +168,7 @@ private InsuranceSchemeRepository insuranceSchemeRepository;
 		employee.setFirstName(employeeRequestDto.getFirstName());
 		employee.setLastName(employeeRequestDto.getLastName());
 		employee.setActive(employeeRequestDto.isActive());
-
+		
 		employeeRepository.save(employee);
 		return "Employee registered successfully";
 	
@@ -206,6 +217,7 @@ private InsuranceSchemeRepository insuranceSchemeRepository;
 		agent.setPhoneNumber(agentRequestDto.getPhoneNumber());
 		agent.setCity(city); 
 		agent.setActive(agentRequestDto.isActive());
+		agent.setVerified(true);
 		agentRepository.save(agent);
 		return "Agent Registered successfully";
 	}
@@ -998,6 +1010,25 @@ public String verifyAgent(Long agentId) {
     agentRepository.save(agent);
 
     return "Agent verified successfully";
+}
+
+
+
+@Override
+public String approveAgentClaim(Long claimId,ClaimResponseDto claimDto) {
+	Claim  claim=claimRespository.findById(claimId).orElseThrow(()-> new AgentNotFoundException("claim not found"));
+	if(!ClaimStatus.PENDING.name().equals(claim.getClaimedStatus())) {
+		throw new RuntimeException("claim is not in pending status");
+	}
+	if(claimDto.isClaimedStatus()) {
+		claim.setClaimedStatus(ClaimStatus.APPROVED.name());
+	}
+	else {
+		claim.setClaimedStatus(ClaimStatus.REJECT.name());
+
+	}
+	claimRespository.save(claim);
+	return "Claim ID "+claimId +" has been approved and the commision has been decued";
 }
 
 

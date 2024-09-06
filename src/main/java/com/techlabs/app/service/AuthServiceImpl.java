@@ -25,8 +25,11 @@ import com.techlabs.app.entity.Administrator;
 import com.techlabs.app.entity.Agent;
 import com.techlabs.app.entity.City;
 import com.techlabs.app.entity.Customer;
+import com.techlabs.app.entity.DocumentStatus;
 import com.techlabs.app.entity.Employee;
+import com.techlabs.app.entity.PendingVerification;
 import com.techlabs.app.entity.Role;
+import com.techlabs.app.entity.SubmittedDocument;
 import com.techlabs.app.entity.User;
 import com.techlabs.app.exception.APIException;
 import com.techlabs.app.exception.BankApiException;
@@ -35,7 +38,9 @@ import com.techlabs.app.repository.AgentRepository; // Add the AgentRepository
 import com.techlabs.app.repository.CityRepository;
 import com.techlabs.app.repository.CustomerRepository; // Add the CustomerRepository
 import com.techlabs.app.repository.EmployeeRepository; // Add the EmployeeRepository
+import com.techlabs.app.repository.PendingVerificationRepository;
 import com.techlabs.app.repository.RoleRepository;
+import com.techlabs.app.repository.SubmittedDocumentRepository;
 import com.techlabs.app.repository.UserRepository;
 import com.techlabs.app.security.JwtTokenProvider;
 
@@ -71,7 +76,13 @@ public class AuthServiceImpl implements AuthService {
 	private CustomerRepository customerRepository; // Add CustomerRepository
 	
 	@Autowired
-	private CityRepository cityRepository;
+	private CityRepository cityRepository;;
+	
+	@Autowired 
+	private SubmittedDocumentRepository submittedDocumentRepository;
+	
+	@Autowired
+	private PendingVerificationRepository pendingVerificationRepository;
 	
 	
 
@@ -149,30 +160,84 @@ public class AuthServiceImpl implements AuthService {
 		return "User registered successfully!";
 	}
 
+//	private void registerCustomer(User user, RegisterDto registerDto){
+//		
+//		System.out.println("doing registration");
+//			
+//			City city = cityRepository.findById(registerDto.getCityId())
+//					.orElseThrow(() -> new APIException(HttpStatus.BAD_REQUEST, "City not found"));
+//
+//			 
+//			
+//			Customer customer = new Customer();
+//			customer.setCustomerId(user.getId());
+//			customer.setUser(user);
+//			customer.setFirstName(registerDto.getFirstName());
+//			customer.setLastName(registerDto.getLastName());
+//		//	customer.setPhoneNumber(registerDto.getPhone_number()); 
+////			customer.setPhoneNumber(registerDto.getPhone_number());
+////																	
+////			customer.setDob(registerDto.getDob());
+//			if (registerDto.getPhone_number() == null) {
+//		        throw new APIException(HttpStatus.BAD_REQUEST, "Phone number is required");
+//		    }
+//		    customer.setPhoneNumber(registerDto.getPhone_number());
+//
+//		    if (registerDto.getDob() == null) {
+//		        throw new APIException(HttpStatus.BAD_REQUEST, "Date of birth is required");
+//		    }
+//		    
+//		
+//		    
+//		    
+//			customer.setCity(city); 
+//			customer.setActive(true); 
+//			customer.setVerified(false); 
+//
+//			
+//			customerRepository.save(customer);
+//		}
+	
 	private void registerCustomer(User user, RegisterDto registerDto) {
-		
-		System.out.println("doing registration");
-			
-			City city = cityRepository.findById(registerDto.getCityId())
-					.orElseThrow(() -> new APIException(HttpStatus.BAD_REQUEST, "City not found"));
+	    City city = cityRepository.findById(registerDto.getCityId())
+	            .orElseThrow(() -> new APIException(HttpStatus.BAD_REQUEST, "City not found"));
 
-			
-			Customer customer = new Customer();
-			customer.setCustomerId(user.getId());
-			customer.setUser(user);
-			customer.setFirstName(registerDto.getFirstName());
-			customer.setLastName(registerDto.getLastName());
-		//	customer.setPhoneNumber(registerDto.getPhone_number()); 
-			customer.setPhoneNumber(registerDto.getPhone_number());
-																	
-			customer.setDob(registerDto.getDob());
-			customer.setCity(city); 
-			customer.setActive(true); 
-			customer.setVerified(false); 
+	    Customer customer = new Customer();
+	  customer.setCustomerId(user.getId());
+	    customer.setUser(user);
+	    customer.setFirstName(registerDto.getFirstName());
+	    customer.setLastName(registerDto.getLastName());
 
-			
-			customerRepository.save(customer);
-		}
+	    if (registerDto.getPhone_number() == null ) {
+	        throw new APIException(HttpStatus.BAD_REQUEST, "Phone number is required");
+	    }
+	    customer.setPhoneNumber(registerDto.getPhone_number());
+
+	    if (registerDto.getDob() == null) {
+	        throw new APIException(HttpStatus.BAD_REQUEST, "Date of birth is required");
+	    }
+	    customer.setDob(registerDto.getDob());
+
+	    customer.setCity(city);
+	    customer.setActive(true);
+	    customer.setVerified(false);
+
+	  customer= customerRepository.save(customer);
+
+	    // Store PAN and Aadhaar numbers temporarily
+	    System.out.println("Customer ID being set: " + customer.getCustomerId());
+
+	    PendingVerification pendingVerification = new PendingVerification();
+	    pendingVerification.setCustomerId(customer.getCustomerId());
+	    
+	    
+	    pendingVerification.setPanCard(registerDto.getPanCard());
+	    pendingVerification.setAadhaarCard(registerDto.getAadhaarCard());
+
+	    System.out.println("Saving pending verification: " + pendingVerification);
+	    pendingVerificationRepository.save(pendingVerification);
+	}
+
 		
 
 private void registerAdministrator(User user, RegisterDto registerDto) {
@@ -182,12 +247,17 @@ private void registerAdministrator(User user, RegisterDto registerDto) {
 	administrator.setUser(user);
 	administrator.setFirstName(registerDto.getFirstName());
 	administrator.setLastName(registerDto.getLastName());
+	if (registerDto.getPhone_number() == null) {
+        throw new APIException(HttpStatus.BAD_REQUEST, "Phone number is required");
+    }
+	
 	administrator.setPhoneNumber(registerDto.getPhone_number()); 
 	System.out.println("Phone number being processed: " + registerDto.getPhone_number());
 
 	adminRepository.save(administrator);
 	System.out.println(administrator);
 }
+
 
 
 }

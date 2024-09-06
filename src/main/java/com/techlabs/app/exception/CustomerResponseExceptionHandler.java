@@ -87,8 +87,7 @@ public class CustomerResponseExceptionHandler {
         return buildResponseEntity(exc, HttpStatus.BAD_REQUEST);
     }
 
-   
-    
+ 
     
     private ResponseEntity<CustomerErrorResponse> buildResponseEntity(Exception exc, HttpStatus status) {
         CustomerErrorResponse error = new CustomerErrorResponse();
@@ -98,4 +97,5 @@ public class CustomerResponseExceptionHandler {
         error.setTimeStamp(System.currentTimeMillis());
         return new ResponseEntity<>(error, status);
     }
+    
 }
