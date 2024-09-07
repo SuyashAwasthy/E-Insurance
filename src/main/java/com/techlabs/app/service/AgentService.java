@@ -4,6 +4,8 @@ import java.util.List;
 
 import com.techlabs.app.dto.AgentRequestDto;
 import com.techlabs.app.dto.AgentResponseDto;
+import com.techlabs.app.dto.ClaimRequestDto;
+import com.techlabs.app.dto.ClaimResponseDto;
 
 public interface AgentService {
 
@@ -22,5 +24,8 @@ public interface AgentService {
 	List<Double> getEarningsReport(Long agentId);
 
 	List<Double> getCommissionReport(Long agentId);
+
+	String agentclaimPolicy(ClaimRequestDto claimRequestDto, Long agentId);
+
 
 }

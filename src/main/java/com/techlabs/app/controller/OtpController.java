@@ -12,6 +12,7 @@ import com.techlabs.app.entity.OtpEntity;
 import com.techlabs.app.repository.OtpRepository;
 import com.techlabs.app.service.EmailService;
 import com.techlabs.app.service.OtpService;
+import com.techlabs.app.service.UserService;
 
 @RestController
 
@@ -30,6 +31,9 @@ public class OtpController {
 	    @Autowired
 	    private OtpRepository otpRepository;
 	    
+	    @Autowired
+	    private UserService userService;
+	    
 	    @PostMapping("/forgot-password")
 
 	    public String forgotPassword(@RequestParam String email) {
@@ -47,25 +51,46 @@ public class OtpController {
 	        return "OTP sent to your email.";
 	     
 	    }
+//	    @PostMapping("/validate-otp")
+//	    public String validateOtp(@RequestParam String email, @RequestParam String otp) {
+////	        OtpEntity otpEntity = otpRepository.findByEmail(email);
+////
+////	        if (otpEntity != null && otpEntity.getOtp().equals(otp) &&
+////	            LocalDateTime.now().minusMinutes(10).isBefore(otpEntity.getCreatedAt())) {
+////	            otpRepository.delete(otpEntity); // OTP is used, remove it
+////	            return "OTP is valid.";
+////	        }
+////	        return "Invalid or expired OTP.";
+////	    }
+//	    	 if (otpService.validateOtp(email, otp)) {
+//	             // Invalidate the OTP after successful validation
+//	             otpService.invalidateOtp(email);
+//	             return "OTP validated successfully. You can now reset your password.";
+//	         } else {
+//	             return "Invalid OTP. Please try again.";
+//	         }
+//	     }
+	    
 	    @PostMapping("/validate-otp")
-	    public String validateOtp(@RequestParam String email, @RequestParam String otp) {
-//	        OtpEntity otpEntity = otpRepository.findByEmail(email);
-//
-//	        if (otpEntity != null && otpEntity.getOtp().equals(otp) &&
-//	            LocalDateTime.now().minusMinutes(10).isBefore(otpEntity.getCreatedAt())) {
-//	            otpRepository.delete(otpEntity); // OTP is used, remove it
-//	            return "OTP is valid.";
-//	        }
-//	        return "Invalid or expired OTP.";
-//	    }
-	    	 if (otpService.validateOtp(email, otp)) {
-	             // Invalidate the OTP after successful validation
-	             otpService.invalidateOtp(email);
-	             return "OTP validated successfully. You can now reset your password.";
-	         } else {
-	             return "Invalid OTP. Please try again.";
-	         }
-	     }
+	    public String validateOtpAndResetPassword(
+	            @RequestParam String email, 
+	            @RequestParam String otp, 
+	            @RequestParam String newPassword, 
+	            @RequestParam String confirmPassword) {
+	        
+	        if (!newPassword.equals(confirmPassword)) {
+	            return "Passwords do not match.";
+	        }
+
+	        if (otpService.validateOtp(email, otp)) {
+	            otpService.invalidateOtp(email);
+	            userService.updatePassword(email, newPassword);
+	            return "Password updated successfully.";
+	        } else {
+	            return "Invalid OTP. Please try again.";
+	        }
+
 	    	
 
+	    }
 }

@@ -16,7 +16,7 @@ import lombok.Data;
 public class Administrator {
 
     @Id
-   // @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long adminId;
 
     @OneToOne

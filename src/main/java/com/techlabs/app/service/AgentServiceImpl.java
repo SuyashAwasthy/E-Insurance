@@ -12,15 +12,23 @@ import org.springframework.stereotype.Service;
 
 import com.techlabs.app.dto.AgentRequestDto;
 import com.techlabs.app.dto.AgentResponseDto;
+import com.techlabs.app.dto.ClaimRequestDto;
+import com.techlabs.app.dto.ClaimResponseDto;
 import com.techlabs.app.dto.UserResponseDto;
 import com.techlabs.app.entity.Agent;
 import com.techlabs.app.entity.City;
+import com.techlabs.app.entity.Claim;
+import com.techlabs.app.entity.ClaimStatus;
 import com.techlabs.app.entity.Commission;
+import com.techlabs.app.entity.InsurancePolicy;
 import com.techlabs.app.entity.Role;
 import com.techlabs.app.entity.User;
 import com.techlabs.app.exception.APIException;
+import com.techlabs.app.exception.AgentNotFoundException;
 import com.techlabs.app.repository.AgentRepository;
 import com.techlabs.app.repository.CityRepository;
+import com.techlabs.app.repository.ClaimRepository;
+import com.techlabs.app.repository.InsurancePolicyRepository;
 import com.techlabs.app.repository.RoleRepository;
 import com.techlabs.app.repository.UserRepository;
 
@@ -46,6 +54,12 @@ public class AgentServiceImpl implements AgentService{
 	
 	@Autowired
 	private RoleRepository roleRepository;
+	
+	@Autowired
+	private InsurancePolicyRepository insurancePolicyRepository;
+	
+	@Autowired
+	private ClaimRepository claimRepository;
 
 	@Override
 	@Transactional
@@ -178,4 +192,31 @@ public class AgentServiceImpl implements AgentService{
 		return null;
 	}
 
+	@Override
+	  public String agentclaimPolicy(ClaimRequestDto claimRequestDto, Long agentId) {
+	      InsurancePolicy insurancePolicy = insurancePolicyRepository.findById(claimRequestDto.getPolicyId())
+	              .orElseThrow(() -> new RuntimeException("Policy not found"));
+
+	      // Agent's Commission Claim
+	      Agent agent = agentRepository.findById(agentId)
+	              .orElseThrow(() -> new AgentNotFoundException("Agent not found"));
+
+	      Claim agentClaim = new Claim();
+	      agentClaim.setClaimAmount(claimRequestDto.getClaimAmount()); // Use the claim amount provided in the request
+	      agentClaim.setBankName(claimRequestDto.getBankName());
+	      agentClaim.setBranchName(claimRequestDto.getBranchName());
+	      agentClaim.setBankAccountId(claimRequestDto.getBankAccountId());
+	      agentClaim.setIfscCode(claimRequestDto.getIfscCode());
+	      agentClaim.setClaimedStatus(ClaimStatus.PENDING.name());
+	      agentClaim.setPolicy(insurancePolicy);
+	      agentClaim.setAgent(agent);  // Set the agent reference
+
+	      claimRepository.save(agentClaim);
+
+	      return "Claim of " + claimRequestDto.getClaimAmount() + " has been successfully created for policy ID "
+	              + claimRequestDto.getPolicyId() + ". The claim is pending approval.";
+	  }
+	
+
+	
 }

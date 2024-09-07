@@ -52,6 +52,7 @@ import com.techlabs.app.entity.TaxSetting;
 import com.techlabs.app.entity.User;
 import com.techlabs.app.exception.APIException;
 import com.techlabs.app.exception.AgentNotFoundException;
+import com.techlabs.app.exception.AllExceptions;
 import com.techlabs.app.exception.BankApiException;
 import com.techlabs.app.exception.ResourceNotFoundException;
 import com.techlabs.app.repository.AdministratorRepository;
@@ -356,11 +357,13 @@ private EmployeeResponseDto convertEmployeeToEmployeeResponseDto(Employee employ
 
     employeeDto.setEmployeeId(employee.getEmployeeId());
     employeeDto.setName(employee.getFirstName());
+    employeeDto.setLastName(employee.getLastName());
     employeeDto.setActive(employee.isActive());
 //Map User details to EmployeeResponseDto
     employeeDto.setUserId(employee.getUser().getId());
     employeeDto.setUsername(employee.getUser().getUsername());
     employeeDto.setEmail(employee.getUser().getEmail());
+    employeeDto.setLastName(employee.getLastName());
 
     return employeeDto;
 }
@@ -672,6 +675,17 @@ public String createInsurancePlan(InsurancePlanDTO insurancePlanDto) {
 
 @Override
 public String createInsuranceScheme(InsuranceSchemeDto insuranceSchemeDto) {
+	
+	// Fetch the insurance plan by its ID
+    InsurancePlan plan = insurancePlanRepository.findById(insuranceSchemeDto.getInsurancePlanId())
+            .orElseThrow(() -> new AllExceptions.PlanNotFoundException("Insurance plan not found"));
+
+    // Check if the insurance plan is active
+    if (!plan.isActive()) {
+        throw new AllExceptions.InactivePlanException("The insurance plan is not active.");
+    }
+
+	
 	InsuranceScheme scheme = new InsuranceScheme();
 	scheme.setInsuranceScheme(insuranceSchemeDto.getInsuranceScheme());
 	scheme.setMinimumPolicyTerm(insuranceSchemeDto.getMinimumPolicyTerm());
@@ -686,7 +700,7 @@ public String createInsuranceScheme(InsuranceSchemeDto insuranceSchemeDto) {
 	scheme.setInstallmentPaymentCommission(insuranceSchemeDto.getInstallmentPaymentCommission());
 	scheme.setDescription(insuranceSchemeDto.getDescription());
 
-	InsurancePlan plan = insurancePlanRepository.findById(insuranceSchemeDto.getInsurancePlanId()).orElseThrow();
+	 plan = insurancePlanRepository.findById(insuranceSchemeDto.getInsurancePlanId()).orElseThrow();
 	scheme.setInsurancePlan(plan);
 
 	insuranceSchemeRepository.save(scheme);
@@ -1014,22 +1028,111 @@ public String verifyAgent(Long agentId) {
 
 
 
+//@Override
+//public String approveAgentClaim(Long claimId,ClaimResponseDto claimDto) {
+//	Claim  claim=claimRespository.findById(claimId).orElseThrow(()-> new AgentNotFoundException("claim not found"));
+//	if(!ClaimStatus.PENDING.name().equals(claim.getClaimedStatus())) {
+//		throw new RuntimeException("claim is not in pending status");
+//	}
+//	if(claimDto.isClaimedStatus()) {
+//		claim.setClaimedStatus(ClaimStatus.APPROVED.name());
+//	}
+//	else {
+//		claim.setClaimedStatus(ClaimStatus.REJECT.name());
+//
+//	}
+//	claimRespository.save(claim);
+//	return "Claim ID "+claimId +" has been approved and the commision has been decued";
+//}
+//
 @Override
-public String approveAgentClaim(Long claimId,ClaimResponseDto claimDto) {
-	Claim  claim=claimRespository.findById(claimId).orElseThrow(()-> new AgentNotFoundException("claim not found"));
-	if(!ClaimStatus.PENDING.name().equals(claim.getClaimedStatus())) {
-		throw new RuntimeException("claim is not in pending status");
-	}
-	if(claimDto.isClaimedStatus()) {
-		claim.setClaimedStatus(ClaimStatus.APPROVED.name());
-	}
-	else {
-		claim.setClaimedStatus(ClaimStatus.REJECT.name());
+public String approveAgentClaim(Long claimId, ClaimResponseDto claimDto) {
+      Claim claim = claimRespository.findById(claimId)
+              .orElseThrow(() -> new RuntimeException("Claim not found"));
 
-	}
-	claimRespository.save(claim);
-	return "Claim ID "+claimId +" has been approved and the commision has been decued";
+      if (!ClaimStatus.PENDING.name().equals(claim.getClaimedStatus())) {
+          throw new RuntimeException("Claim is not in pending status.");
+      }
+
+      System.out.println("Claim status is pending. Proceeding with approval/rejection.");
+      System.out.println("Claimed status from DTO: " + claimDto.isClaimedStatus());
+      System.out.println(claimDto);
+      System.out.println(claimId);
+      if (claimDto.isClaimedStatus()) {
+          // Get the associated agent and deduct the commission
+        
+          Agent agent = claim.getAgent();
+          double totalCommission = agent.getTotalCommission();
+          
+          System.out.println("Agent's total commission: " + totalCommission);
+          System.out.println("Claim amount: " + claim.getClaimAmount());
+
+          if (totalCommission < claim.getClaimAmount()) {
+              throw new AgentNotFoundException("Insufficient total commission amount.");
+          }
+
+          totalCommission -= claim.getClaimAmount();
+          agent.setTotalCommission(totalCommission);
+          agentRepository.save(agent);
+
+          claim.setClaimedStatus(ClaimStatus.APPROVED.name());
+          System.out.println("Claim approved. New commission: " + totalCommission);
+      }
+    
+      else {
+          claim.setClaimedStatus(ClaimStatus.REJECT.name());
+          System.out.println("Claim rejected.");
+      }
+      
+
+      claimRespository.save(claim);
+
+      return "Claim ID " + claimId + " has been " + (claimDto.isClaimedStatus() ? "approved" : "rejected") 
+             + " and the commission has been " + (claimDto.isClaimedStatus() ? "deducted." : "not deducted.");
+  }
+
+
+
+@Override
+@Transactional
+public String approveCustomerClaim(Long claimId, ClaimResponseDto claimDto) {
+    // Find the claim by ID
+    Claim claim = claimRespository.findById(claimId)
+            .orElseThrow(() -> new AllExceptions.UserNotFoundException("Claim not found"));
+
+    // Check if the claim is in "PENDING" status
+    if (!claim.getClaimedStatus().equals("PENDING")) {
+        throw new AgentNotFoundException("Claim is not in pending status.");
+    }
+
+    // Get the associated insurance policy
+    InsurancePolicy policy = claim.getPolicy();
+
+    if (claimDto.isClaimedStatus()) {
+        // If claim is approved, deduct the claim amount from the policy's total amount paid
+        double claimAmount = claim.getClaimAmount();
+        double totalAmountPaid = policy.getTotalAmountPaid();
+
+        // Check if totalAmountPaid is greater than or equal to claimAmount before deducting
+        if (totalAmountPaid >= claimAmount) {
+            totalAmountPaid -= claimAmount;
+            policy.setTotalAmountPaid(0.0);
+           // policy.setTotalAmountPaid(totalAmountPaid);
+        } else {
+            throw new AllExceptions.InsufficientFundsException("Insufficient total amount paid for deduction.");
+        }
+
+        // Mark the claim as approved
+        claim.setClaimedStatus("APPROVED");
+    } else {
+        // If claim is rejected, just mark it as rejected
+        claim.setClaimedStatus("REJECTED");
+    }
+
+    // Save the updated claim and policy
+    claimRespository.save(claim);
+    insurancePolicyRepository.save(policy);  // Save the updated policy with the deducted amount
+
+    return "Claim has been processed and the amount has been deducted from the total amount paid.";
 }
-
-
 }

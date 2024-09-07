@@ -108,6 +108,27 @@ public class AllExceptions {
             super(message);
         }
     }
-    
+    public static class PolicyNotFoundException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        public PolicyNotFoundException(String message) {
+            super(message);
+        }
+    }
+    public static class PlanNotFoundException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        public PlanNotFoundException(String message) {
+            super(message);
+        }
+    }
+    public static class InactivePlanException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        public InactivePlanException(String message) {
+            super(message);
+        }
+    }
 
 }
+

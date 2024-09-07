@@ -26,6 +26,8 @@ public interface CustomerService {
 
 	String requestPolicyCancellation(CancellationRequestDto cancellationRequest, Long customerId);
 
+	String customerCancelPolicy(ClaimRequestDto claimRequestDto, Long customerId);
+
 	
 	//String buyPolicy(PolicyAccountRequestDto accountRequestDto, long customerId);
 

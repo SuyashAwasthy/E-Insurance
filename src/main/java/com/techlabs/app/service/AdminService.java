@@ -65,6 +65,7 @@ public interface AdminService{
 		//Insurance type,plan
 	
 	String approveAgentClaim(Long claimId, ClaimResponseDto claimDto);
+	String approveCustomerClaim(Long claimId, ClaimResponseDto claimDto);
 	
 	
 	//Insurance

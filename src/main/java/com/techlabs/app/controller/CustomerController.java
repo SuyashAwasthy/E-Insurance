@@ -147,6 +147,13 @@ public class CustomerController {
 
 	}
 	
+	@PostMapping("/cancelPolicy")
+    public ResponseEntity<String> customerCancelPolicy(@RequestBody ClaimRequestDto claimRequestDto,
+                                                       @RequestParam Long customerId) {
+        String response = customerService.customerCancelPolicy(claimRequestDto, customerId);
+        return ResponseEntity.ok(response);
+    }
+	
 	
 //	    @GetMapping("/customer/{customerId}")
 //	    public ResponseEntity<List<InsurancePolicy>> getPoliciesByCustomer(

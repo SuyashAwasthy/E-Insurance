@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.techlabs.app.dto.AgentRequestDto;
 import com.techlabs.app.dto.AgentResponseDto;
+import com.techlabs.app.dto.ClaimRequestDto;
 import com.techlabs.app.service.AgentService;
 
 @RestController
@@ -94,5 +95,11 @@ public class AgentController {
 		return agentService.getCommissionReport(agentId);
 	}
 
+	@PostMapping("/claim")
+	  public ResponseEntity<String> AgentclaimPolicy(@RequestBody ClaimRequestDto claimRequestDto,
+	                                            @RequestParam Long agentId) {
+	      String response = agentService.agentclaimPolicy(claimRequestDto, agentId);
+	      return ResponseEntity.ok(response);
+	  }
 
 }

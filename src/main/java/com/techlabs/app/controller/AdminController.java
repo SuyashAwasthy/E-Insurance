@@ -375,11 +375,19 @@ public class AdminController {
   	          return new ResponseEntity<>(response, HttpStatus.OK);
   	      }
     	  
+//    	    @PostMapping("/approveClaim/{claimId}")
+//    	    public ResponseEntity<String> approveClaim(@PathVariable Long claimId,ClaimResponseDto claimDto){
+//    	    String result=adminService.approveAgentClaim(claimId, claimDto);	
+//    	    return new ResponseEntity<>(result,HttpStatus.OK);
+//    	    }
     	    @PostMapping("/approveClaim/{claimId}")
-    	    public ResponseEntity<String> approveClaim(@PathVariable Long claimId,ClaimResponseDto claimDto){
-    	    String result=adminService.approveAgentClaim(claimId, claimDto);	
-    	    return new ResponseEntity<>(result,HttpStatus.OK);
+    	      public ResponseEntity<String> approveClaim(@PathVariable Long claimId, @RequestBody ClaimResponseDto claimDto) {
+    	          String result = adminService.approveAgentClaim(claimId,claimDto);
+    	          return new ResponseEntity<>(result, HttpStatus.OK);
+    	      }
+    	    @PostMapping("/approveCustomerClaim/{claimId}")
+    	    public ResponseEntity<String> approveCustomerClaim(@PathVariable Long claimId, @RequestBody ClaimResponseDto claimDto) {
+    	        String result = adminService.approveCustomerClaim(claimId, claimDto);
+    	        return new ResponseEntity<>(result, HttpStatus.OK);
     	    }
-    	    
-    	    
 }
