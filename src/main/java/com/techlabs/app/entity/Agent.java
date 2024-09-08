@@ -56,6 +56,8 @@ package com.techlabs.app.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
+import java.time.LocalDate;
 import java.util.Set;
 
 @Entity
@@ -88,5 +90,9 @@ public class Agent {
     private double totalCommission;
     
     private boolean verified = false;
+    
+    @Column(name = "registration_date") 
+    private LocalDate registrationDate;
+
 }
 

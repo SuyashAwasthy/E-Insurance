@@ -1,5 +1,6 @@
 package com.techlabs.app.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,10 @@ public class CommissionServiceImpl implements CommissionService {
         }
 
         return commission;
+    }
+    
+    public List<Commission> getCommissionsInRange(LocalDateTime startDate, LocalDateTime endDate) {
+        return commissionRepository.findByDateBetween(startDate, endDate);
     }
 
 //    @Override

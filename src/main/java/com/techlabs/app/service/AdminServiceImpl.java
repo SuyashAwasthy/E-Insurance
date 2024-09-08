@@ -1,5 +1,6 @@
 package com.techlabs.app.service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -219,6 +220,7 @@ private ClaimRepository claimRespository;
 		agent.setCity(city); 
 		agent.setActive(agentRequestDto.isActive());
 		agent.setVerified(true);
+		agent.setRegistrationDate(LocalDate.now()); 
 		agentRepository.save(agent);
 		return "Agent Registered successfully";
 	}
@@ -769,11 +771,11 @@ private InsurancePlanDTO convertToInsurancePlanDTO(InsurancePlan plan) {
     return new InsurancePlanDTO(
             plan.getInsurancePlanId(),
             plan.getName(),
-            plan.isActive(),
-            plan.getInsuranceSchemes() != null ? 
-                    plan.getInsuranceSchemes().stream()
-                        .map(this::convertToInsuranceSchemeDto)
-                        .collect(Collectors.toList()) : new ArrayList<>()
+            plan.isActive()
+//            plan.getInsuranceSchemes() != null ? 
+//                    plan.getInsuranceSchemes().stream()
+//                        .map(this::convertToInsuranceSchemeDto)
+//                        .collect(Collectors.toList()) : new ArrayList<>()
     );
 }
 
@@ -1135,4 +1137,34 @@ public String approveCustomerClaim(Long claimId, ClaimResponseDto claimDto) {
 
     return "Claim has been processed and the amount has been deducted from the total amount paid.";
 }
+
+@Override
+public List<InsuranceSchemeDto> getSchemesByPlan(Long planId) {
+    List<InsuranceScheme> schemes = insuranceSchemeRepository.findByInsurancePlan_InsurancePlanId(planId);
+    return schemes.stream()
+            .map(this::convertToInsuranceSchemeDto)
+            .collect(Collectors.toList());
+}
+
+//private InsuranceSchemeDto convertToInsuranceSchemeDto(InsuranceScheme scheme) {
+//    InsuranceSchemeDto dto = new InsuranceSchemeDto();
+//    dto.setInsuranceSchemeId(scheme.getInsuranceSchemeId());
+//    dto.setInsuranceScheme(scheme.getInsuranceScheme());
+//    dto.setMinimumPolicyTerm(scheme.getMinimumPolicyTerm());
+//    dto.setMaximumPolicyTerm(scheme.getMaximumPolicyTerm());
+//    dto.setMinimumAge(scheme.getMinimumAge());
+//    dto.setMaximumAge(scheme.getMaximumAge());
+//    dto.setMinimumInvestmentAmount(scheme.getMinimumInvestmentAmount());
+//    dto.setMaximumInvestmentAmount(scheme.getMaximumInvestmentAmount());
+//    dto.setProfitRatio(scheme.getProfitRatio());
+//    dto.setSchemeImage(scheme.getSchemeImage());
+//    dto.setNewRegistrationCommission(scheme.getNewRegistrationCommission());
+//    dto.setInstallmentPaymentCommission(scheme.getInstallmentPaymentCommission());
+//    dto.setDescription(scheme.getDescription());
+//    dto.setInsurancePlanId(scheme.getInsurancePlan().getInsurancePlanId());
+//    return dto;
+//}
+
+
+
 }

@@ -3,6 +3,7 @@ package com.techlabs.app.controller;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,6 +18,7 @@ import com.techlabs.app.service.UserService;
 @RestController
 
 @RequestMapping("/E-Insurance/auth")
+@CrossOrigin(origins="http://localhost:3000")
 
 public class OtpController {
 	

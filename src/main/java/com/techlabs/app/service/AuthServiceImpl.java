@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.techlabs.app.dto.JWTAuthResponse;
 import com.techlabs.app.dto.LoginDto;
 import com.techlabs.app.dto.RegisterDto;
 import com.techlabs.app.entity.Administrator;
@@ -105,14 +107,53 @@ public class AuthServiceImpl implements AuthService {
 		this.cityRepository = cityRepository;
 	}
 
-	@Override
-	public String login(LoginDto loginDto) {
-		Authentication authentication = authenticationManager.authenticate(
-				new UsernamePasswordAuthenticationToken(loginDto.getUsernameOrEmail(), loginDto.getPassword()));
-		SecurityContextHolder.getContext().setAuthentication(authentication);
-		return jwtTokenProvider.generateToken(authentication);
-	}
+//	@Override
+//	public String login(LoginDto loginDto) {
+//		Authentication authentication = authenticationManager.authenticate(
+//				new UsernamePasswordAuthenticationToken(loginDto.getUsernameOrEmail(), loginDto.getPassword()));
+//		SecurityContextHolder.getContext().setAuthentication(authentication);
+//		return jwtTokenProvider.generateToken(authentication);
+//	}
 
+	@Override
+	  public JWTAuthResponse login(LoginDto loginDto) {
+	      // Authenticate the user
+	      Authentication authentication = authenticationManager.authenticate(
+	              new UsernamePasswordAuthenticationToken(
+	                      loginDto.getUsernameOrEmail(), 
+	                      loginDto.getPassword()
+	              )
+	      );
+
+	      // Set the authentication in the security context
+	      SecurityContextHolder.getContext().setAuthentication(authentication);
+
+	      // Generate the JWT token
+	      String token = jwtTokenProvider.generateToken(authentication);
+
+	      // Determine if the input is an email or username
+	      User user;
+	      if (loginDto.getUsernameOrEmail().contains("@")) {
+	          user = userRepository.findByEmail(loginDto.getUsernameOrEmail())
+	                  .orElseThrow(() -> new APIException(HttpStatus.NOT_FOUND, "User not found"));
+	      } else {
+	          user = userRepository.findByUsername(loginDto.getUsernameOrEmail())
+	                  .orElseThrow(() -> new APIException(HttpStatus.NOT_FOUND, "User not found"));
+	      }
+
+	      // Create the response DTO
+	      JWTAuthResponse jwtAuthResponse = new JWTAuthResponse();
+	      jwtAuthResponse.setAccessToken(token);
+
+	      // Set the role in the response
+	      for (Role role : user.getRoles()) {
+	          jwtAuthResponse.setRole(role.getName());  // Assuming the user has only one role
+	          break;
+	      }
+
+	      return jwtAuthResponse;
+	  }	
+	
 	@Transactional
 	@Override
 	public String register(RegisterDto registerDto) {
@@ -222,6 +263,7 @@ public class AuthServiceImpl implements AuthService {
 	    customer.setActive(true);
 	    customer.setVerified(false);
 
+	    customer.setRegistrationDate(LocalDate.now());
 	  customer= customerRepository.save(customer);
 
 	    // Store PAN and Aadhaar numbers temporarily

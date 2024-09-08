@@ -10,6 +10,7 @@ public class Employee {
 
     @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "employeeId")
     private Long employeeId;
 
     @OneToOne

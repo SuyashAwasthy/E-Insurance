@@ -35,6 +35,9 @@ public class Customer {
 
 	private boolean isActive = true;
 	private boolean verified = false;
+	
+	@Column(name = "registration_date") 
+    private LocalDate registrationDate;
 
 	
 

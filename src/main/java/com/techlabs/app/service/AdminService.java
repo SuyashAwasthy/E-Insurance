@@ -62,11 +62,13 @@ public interface AdminService{
 	boolean deactivateInsurancePolicy(Long id);
 	
 	String verifyAgent(Long agentId);
-		//Insurance type,plan
+		
 	
+	// approving the claimm
 	String approveAgentClaim(Long claimId, ClaimResponseDto claimDto);
 	String approveCustomerClaim(Long claimId, ClaimResponseDto claimDto);
-	
+	List<InsuranceSchemeDto> getSchemesByPlan(Long planId);
+		
 	
 	//Insurance
 	

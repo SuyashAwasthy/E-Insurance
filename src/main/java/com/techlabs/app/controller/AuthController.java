@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +20,7 @@ import com.techlabs.app.service.AuthService;
 
 @RestController
 @RequestMapping("/E-Insurance/auth")
+@CrossOrigin(origins="http://localhost:3000")
 public class AuthController {
 
 	private AuthService authService;
@@ -32,20 +34,35 @@ public class AuthController {
 	}
 
 	// Build Login REST API
-	@PostMapping(value = { "/login", "/signin" })
-	public ResponseEntity<JWTAuthResponse> login(@RequestBody LoginDto loginDto) {
-		logger.trace("A TRACE Message");
-		logger.debug("A DEBUG Message");
-		logger.info("An INFO Message");
-		logger.warn("A WARN Message");
-		logger.error("An ERROR Message");
-		String token = authService.login(loginDto);
-		System.out.println(loginDto);
-		JWTAuthResponse jwtAuthResponse = new JWTAuthResponse();
-		jwtAuthResponse.setAccessToken(token);
-
-		return ResponseEntity.ok(jwtAuthResponse);
-	}
+//	@PostMapping(value = { "/login", "/signin" })
+//	public ResponseEntity<JWTAuthResponse> login(@RequestBody LoginDto loginDto) {
+//		logger.trace("A TRACE Message");
+//		logger.debug("A DEBUG Message");
+//		logger.info("An INFO Message");
+//		logger.warn("A WARN Message");
+//		logger.error("An ERROR Message");
+//		String token = authService.login(loginDto);
+//		System.out.println(loginDto);
+//		JWTAuthResponse jwtAuthResponse = new JWTAuthResponse();
+//		jwtAuthResponse.setAccessToken(token);
+//
+//		return ResponseEntity.ok(jwtAuthResponse);
+//	}
+	
+	@PostMapping("/login")
+	  public ResponseEntity<JWTAuthResponse> login(@RequestBody LoginDto loginDto) {
+	      logger.debug("Login attempt for user: " + loginDto.getUsernameOrEmail());
+	      try {
+	          // Perform login and get the JWTAuthResponse which includes token and role
+	          JWTAuthResponse jwtAuthResponse = authService.login(loginDto);
+	          
+	          logger.info("User logged in successfully with role: {}", jwtAuthResponse.getRole());
+	          return ResponseEntity.ok(jwtAuthResponse);
+	      } catch (Exception e) {
+	          logger.error("Login failed", e);
+	          return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+	      }
+	  }
 
 	// Build Register REST API
 	@PostMapping(value = { "/register", "/signup" })
