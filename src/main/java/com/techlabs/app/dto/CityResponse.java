@@ -8,5 +8,6 @@ public class CityResponse {
 	private Long cityId;
     private String name;
     private Boolean isActive;
+    private Long stateId;
 
 }

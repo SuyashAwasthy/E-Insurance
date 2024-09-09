@@ -3,6 +3,7 @@ package com.techlabs.app.controller;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,8 +39,13 @@ public class OtpController {
 	    
 	    @PostMapping("/forgot-password")
 
-	    public String forgotPassword(@RequestParam String email) {
+	    public ResponseEntity<String> forgotPassword(@RequestParam String email) {
 
+	    	 if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+	             return ResponseEntity.badRequest().body("Invalid email format.");
+	         }
+
+	    	
 	        // Generate the OTP
 
 	    	String otp = otpService.generateOTP();
@@ -50,7 +56,7 @@ public class OtpController {
 	        // Store the OTP in the database
 	        otpService.saveOtp(email, otp);
 
-	        return "OTP sent to your email.";
+	        return ResponseEntity.ok("OTP sent to your email.");
 	     
 	    }
 //	    @PostMapping("/validate-otp")

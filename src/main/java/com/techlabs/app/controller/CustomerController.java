@@ -109,7 +109,9 @@ public class CustomerController {
 
 	@GetMapping("/get-all-customers")
 	public ResponseEntity<List<Customer>> getAllCustomers() {
+		 logger.info("Received request to get all customers.");
 		List<Customer> customers = customerService.getAllCustomers();
+		logger.info("Retrieved {} customers.", customers.size());
 		return new ResponseEntity<>(customers, HttpStatus.OK);
 	}
 //	    

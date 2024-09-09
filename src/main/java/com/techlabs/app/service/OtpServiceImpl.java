@@ -31,11 +31,19 @@ public class OtpServiceImpl implements OtpService{
 
     @Override
     public void saveOtp(String email, String otp) {
-        OtpEntity otpEntity = new OtpEntity();
-        otpEntity.setEmail(email);
-        otpEntity.setOtp(otp);
-        otpEntity.setCreatedAt(LocalDateTime.now());
-        otpRepository.save(otpEntity);
+    	List<OtpEntity> otpEntities = otpRepository.findByEmail(email);
+        if (!otpEntities.isEmpty()) {
+            OtpEntity otpEntity = otpEntities.get(0); // Assuming one entry per email
+            otpEntity.setOtp(otp);
+            otpEntity.setCreatedAt(LocalDateTime.now());
+            otpRepository.save(otpEntity);
+        } else {
+            OtpEntity otpEntity = new OtpEntity();
+            otpEntity.setEmail(email);
+            otpEntity.setOtp(otp);
+            otpEntity.setCreatedAt(LocalDateTime.now());
+            otpRepository.save(otpEntity);
+        }
     }
 
     @Override

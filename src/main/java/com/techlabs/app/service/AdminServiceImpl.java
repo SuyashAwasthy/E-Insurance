@@ -585,6 +585,7 @@ public PagedResponse<CityResponse> getAllCities(int page, int size, String sortB
            CityResponse response = new CityResponse();
            response.setCityId(city.getId());
            response.setName(city.getCity_name());
+           response.setStateId(city.getState().getStateId());
            response.setIsActive(city.getIsActive());
            return response;
        }).collect(Collectors.toList());
@@ -670,7 +671,7 @@ public String createTaxSetting(TaxSettingRequestDto taxSettingRequestDto) {
 public String createInsurancePlan(InsurancePlanDTO insurancePlanDto) {
 	InsurancePlan plan = new InsurancePlan();
 	plan.setName(insurancePlanDto.getName());
-	plan.setActive(insurancePlanDto.isActive());
+	plan.setActive(true);
 	insurancePlanRepository.save(plan);
 	return "Insurance Plan created successfully.";
 }
