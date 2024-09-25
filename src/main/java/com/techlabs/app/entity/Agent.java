@@ -58,7 +58,12 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Data
@@ -84,6 +89,7 @@ public class Agent {
     private boolean isActive;
 
     @OneToMany(mappedBy = "agent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Commission> commissions;
     
     
@@ -93,6 +99,13 @@ public class Agent {
     
     @Column(name = "registration_date") 
     private LocalDate registrationDate;
+    
+    @OneToMany(mappedBy = "agent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference  // Forward reference in bidirectional relationship
+    private Set<InsurancePolicy> insurancePolicies; // Renamed for clarity
+    
+    @OneToMany(cascade = { CascadeType.MERGE, CascadeType.PERSIST, CascadeType.DETACH, CascadeType.REFRESH })
+    private List<Claim> claims;
 
 }
 

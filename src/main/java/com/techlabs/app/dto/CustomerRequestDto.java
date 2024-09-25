@@ -11,8 +11,10 @@ public class CustomerRequestDto {
 	private String firstName; 
     private String lastName; 
     private LocalDate dob; 
-    private String phoneNumber; 
+    private long phoneNumber; 
     private Long cityId; // Assuming you will pass city ID 
     private List<Long> insurancePolicyIds; // Assuming you will pass insurance policy IDs 
+    private Boolean isActive; // Example of a filter parameter
+    private Boolean verified; // Example of a filter parameter
 
 }

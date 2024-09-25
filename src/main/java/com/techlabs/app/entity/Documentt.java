@@ -43,6 +43,11 @@ public class Documentt {
 	@Lob
 	@Column(name="content",columnDefinition="LONGBLOB")
 	private byte[] content;
+
+	public String setDocumentName(String string) {
+		return "string";
+		
+	}
 	
 			
 

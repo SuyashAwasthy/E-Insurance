@@ -1,6 +1,7 @@
 package com.techlabs.app.entity;
 
 public enum PolicyStatus {
-	PENDING,ACTIVE,REJECT,COMPLETE,DROP,CLAIMED;
+	
+	PENDING,ACTIVE,REJECT,COMPLETE,DROP,CLAIMED, REJECTED, APPROVED;
     
 }

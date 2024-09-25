@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,11 +25,13 @@ import com.techlabs.app.dto.CityRequest;
 import com.techlabs.app.dto.CityResponse;
 import com.techlabs.app.dto.CityResponseDto;
 import com.techlabs.app.dto.ClaimResponseDto;
+import com.techlabs.app.dto.CustomerResponseDto;
 import com.techlabs.app.dto.EmployeeRequestDto;
 import com.techlabs.app.dto.EmployeeResponseDto;
 import com.techlabs.app.dto.InsurancePlanDTO;
 import com.techlabs.app.dto.InsurancePolicyDto;
 import com.techlabs.app.dto.InsuranceSchemeDto;
+import com.techlabs.app.dto.SchemeDocumentDto;
 import com.techlabs.app.dto.StateRequest;
 import com.techlabs.app.dto.StateResponse;
 import com.techlabs.app.dto.StateResponseDto;
@@ -40,13 +43,16 @@ import com.techlabs.app.entity.Claim;
 import com.techlabs.app.entity.ClaimStatus;
 import com.techlabs.app.entity.Commission;
 import com.techlabs.app.entity.Customer;
+import com.techlabs.app.entity.DocumentType;
 import com.techlabs.app.entity.Employee;
 import com.techlabs.app.entity.InsurancePlan;
 import com.techlabs.app.entity.InsurancePolicy;
 import com.techlabs.app.entity.InsuranceScheme;
 import com.techlabs.app.entity.Nominee;
 import com.techlabs.app.entity.Payment;
+import com.techlabs.app.entity.PaymentTax;
 import com.techlabs.app.entity.Role;
+import com.techlabs.app.entity.SchemeDocument;
 import com.techlabs.app.entity.State;
 import com.techlabs.app.entity.SubmittedDocument;
 import com.techlabs.app.entity.TaxSetting;
@@ -60,15 +66,20 @@ import com.techlabs.app.repository.AdministratorRepository;
 import com.techlabs.app.repository.AgentRepository;
 import com.techlabs.app.repository.CityRepository;
 import com.techlabs.app.repository.ClaimRepository;
+import com.techlabs.app.repository.CustomerRepository;
 import com.techlabs.app.repository.EmployeeRepository;
 import com.techlabs.app.repository.InsurancePlanRepository;
 import com.techlabs.app.repository.InsurancePolicyRepository;
 import com.techlabs.app.repository.InsuranceSchemeRepository;
+import com.techlabs.app.repository.PaymentTaxRepository;
 import com.techlabs.app.repository.RoleRepository;
+import com.techlabs.app.repository.SchemeDocumentRepository;
 import com.techlabs.app.repository.StateRepository;
 import com.techlabs.app.repository.TaxSettingRepository;
 import com.techlabs.app.repository.UserRepository;
 import com.techlabs.app.util.PagedResponse;
+
+import jakarta.validation.Valid;
 
 @Service
 public class AdminServiceImpl implements AdminService {
@@ -100,6 +111,14 @@ private InsuranceSchemeRepository insuranceSchemeRepository;
 @Autowired
 private ClaimRepository claimRespository;
 
+@Autowired
+private CustomerRepository customerRepository;
+
+@Autowired
+private PaymentTaxRepository paymentTaxRepository;
+
+@Autowired
+private SchemeDocumentRepository schemeDocumentRepository;
 
    
 	public AdminServiceImpl(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder,
@@ -212,7 +231,7 @@ private ClaimRepository claimRespository;
 
 		
 		Agent agent = new Agent();
-		agent.setAgentId(savedUser.getId());
+		//agent.setAgentId(savedUser.getId());
 		agent.setUser(savedUser);
 		agent.setFirstName(agentRequestDto.getFirstName());
 		agent.setLastName(agentRequestDto.getLastName());
@@ -271,13 +290,16 @@ private AgentResponseDto convertAgentToAgentResponseDto(Agent agent) {
     agentDto.setName(agent.getFirstName() + " " + agent.getLastName()); // Combined name
     agentDto.setPhoneNumber(agent.getPhoneNumber());
     agentDto.setActive(agent.isActive());
+    agentDto.setEmail(agent.getUser().getEmail());
+agentDto.setFirstName(agent.getFirstName());
+agentDto.setLastName(agent.getLastName());
 
     // Convert and set the associated City entity to CityResponseDto
 //    if (agent.getCity() != null) {
 //        CityResponseDto cityDto = convertCityToCityResponseDto(agent.getCity());
 //        agentDto.setCity(cityDto);
 //    }
-//
+////
 //    // Convert and set the associated User entity to UserResponseDto
     if (agent.getUser() != null) {
         UserResponseDto userDto = new UserResponseDto();
@@ -358,7 +380,7 @@ private EmployeeResponseDto convertEmployeeToEmployeeResponseDto(Employee employ
     EmployeeResponseDto employeeDto = new EmployeeResponseDto();
 
     employeeDto.setEmployeeId(employee.getEmployeeId());
-    employeeDto.setName(employee.getFirstName());
+    employeeDto.setFirstName(employee.getFirstName());
     employeeDto.setLastName(employee.getLastName());
     employeeDto.setActive(employee.isActive());
 //Map User details to EmployeeResponseDto
@@ -470,6 +492,10 @@ private List<AgentResponseDto> convertAgentToAgentResponseDto(List<Agent> allAge
 
 @Override
 public String createState(StateRequest stateRequest) {
+	Optional<State> existingState=stateRepository.findByName(stateRequest.getName());
+	if(existingState.isPresent()) {
+		return "State with name '"+stateRequest.getName() + "'already exists";
+	}
     State state = new State();
     state.setName(stateRequest.getName());
     state.setIsActive(true); // Default value
@@ -506,10 +532,21 @@ public String deactivateStateById(long id) {
     if (state.getIsActive()) {
         state.setIsActive(false);
         stateRepository.save(state);
+        
+     // Deactivate associated cities
+        List<City> cities =cityRepository.findByState_StateId(id);
+        for (City city : cities) {
+            if (city.getIsActive()) {
+                city.setIsActive(false);
+                cityRepository.save(city);
+            }
+        }
+
+        return "State and associated cities deactivated successfully";
     } else {
         throw new IllegalStateException("State is already deactivated");
     }
-    return "State deactivated successfully";
+   // return "State deactivated successfully";
 }
 
 @Override
@@ -520,10 +557,20 @@ public String activateStateById(long id) {
     if (!state.getIsActive()) {
         state.setIsActive(true);
         stateRepository.save(state);
+        
+     // Activate associated cities
+        List<City> cities = cityRepository.findByState_StateId(id);
+        for (City city : cities) {
+            if (!city.getIsActive()) {
+                city.setIsActive(true);
+                cityRepository.save(city);
+            }
+        }
+        return "State and associated cities Activated successfully";
     } else {
         throw new IllegalStateException("State is already activated");
     }
-    return "State activated successfully";
+    //return "State activated successfully";
 
 
 }
@@ -534,6 +581,19 @@ public String createCity(CityRequest cityRequest) {
          State state = stateRepository.findById(cityRequest.getState_id())
                  .orElseThrow(() -> new IllegalArgumentException("Invalid state ID"));
          
+      // Check if the state is active
+         if (!state.getIsActive()) {
+             throw new IllegalStateException("Cannot create city: The associated state is inactive.");
+         }
+
+
+
+//      // Check if a city with the same name already exists in the specified state
+//         boolean cityExists = cityRepository.existsByCity_nameAndState_StateId(cityRequest.getName(), cityRequest.getState_id());
+//         if (cityExists) {
+//             throw new IllegalArgumentException("City with this name already exists in the specified state.");
+//         }
+//         
          City city = new City();
          city.setCity_name(cityRequest.getName());
          city.setState(state);
@@ -609,16 +669,24 @@ public String createTaxSetting(TaxSettingRequestDto taxSettingRequestDto) {
       @Transactional
       public String updateAgent(Long agentId, AgentRequestDto agentRequestDto) {
 	
-	if (agentId == null) {
-        throw new BankApiException(HttpStatus.BAD_REQUEST, "Agent ID must not be null");
-    }
+	System.out.println("AgentRequestDto: " + agentRequestDto);
+	
+	
+	    if (agentId == null) {
+	        throw new BankApiException(HttpStatus.BAD_REQUEST, "Agent ID must not be null");
+	    }
+
+	    // Debugging statement to check the agentId value
+	    System.out.println("Inside service layer - agentId: " + agentId);
+	
+	
     if (agentRequestDto == null) {
         throw new BankApiException(HttpStatus.BAD_REQUEST, "Agent request DTO must not be null");
     }
-    if (agentRequestDto.getCity_id() == null) {
-        throw new BankApiException(HttpStatus.BAD_REQUEST, "City ID must not be null");
-    }
-          
+//    if (agentRequestDto.getCity_id() == null) {
+//        throw new BankApiException(HttpStatus.BAD_REQUEST, "City ID must not be null");
+//    }
+//          
           Agent agent = agentRepository.findById(agentId)
                   .orElseThrow(() -> new BankApiException(HttpStatus.NOT_FOUND, "Agent not found with id: " + agentId));
 
@@ -645,23 +713,29 @@ public String createTaxSetting(TaxSettingRequestDto taxSettingRequestDto) {
           }
 
          
-          City city = cityRepository.findById(agentRequestDto.getCity_id())
-                  .orElseThrow(() -> new BankApiException(HttpStatus.BAD_REQUEST, "City not found with id: " + agentRequestDto.getCity_id()));
+//          City city = cityRepository.findById(agentRequestDto.getCity_id())
+//                  .orElseThrow(() -> new BankApiException(HttpStatus.BAD_REQUEST, "City not found with id: " + agentRequestDto.getCity_id()));
 
+          if (agentRequestDto.getCity_id() != null) {
+        	    City city = cityRepository.findById(agentRequestDto.getCity_id())
+        	            .orElseThrow(() -> new BankApiException(HttpStatus.BAD_REQUEST, "City not found with id: " + agentRequestDto.getCity_id()));
+        	    agent.setCity(city);
+        	}
           if(agentRequestDto.getFirstName()!=null)
           agent.setFirstName(agentRequestDto.getFirstName());
           if(agentRequestDto.getLastName()!=null)
           agent.setLastName(agentRequestDto.getLastName());
           if(agentRequestDto.getPhoneNumber()!=null)
           agent.setPhoneNumber(agentRequestDto.getPhoneNumber());
-          if(agentRequestDto.getCity_id()!=null)
-          agent.setCity(city);  
+         // if(agentRequestDto.getCity_id()!=null)
+        //  agent.setCity(city);  
          // if(agentRequestDto.isActive()!=null)
           agent.setActive(agentRequestDto.isActive());
 
          
           userRepository.save(user);
           agentRepository.save(agent);
+          System.out.println("Agent saved with ID: " + agent.getAgentId());
 
           return "Agent updated successfully";
       }
@@ -669,6 +743,12 @@ public String createTaxSetting(TaxSettingRequestDto taxSettingRequestDto) {
 
 @Override
 public String createInsurancePlan(InsurancePlanDTO insurancePlanDto) {
+	
+	Optional<InsurancePlan> existingPlan =insurancePlanRepository.findByName(insurancePlanDto.getName());
+	
+	if(existingPlan.isPresent()) {
+		return "Insurance Plan with  the name '"+insurancePlanDto.getName() +"' already exists. ";
+	}
 	InsurancePlan plan = new InsurancePlan();
 	plan.setName(insurancePlanDto.getName());
 	plan.setActive(true);
@@ -676,39 +756,39 @@ public String createInsurancePlan(InsurancePlanDTO insurancePlanDto) {
 	return "Insurance Plan created successfully.";
 }
 
-@Override
-public String createInsuranceScheme(InsuranceSchemeDto insuranceSchemeDto) {
-	
-	// Fetch the insurance plan by its ID
-    InsurancePlan plan = insurancePlanRepository.findById(insuranceSchemeDto.getInsurancePlanId())
-            .orElseThrow(() -> new AllExceptions.PlanNotFoundException("Insurance plan not found"));
-
-    // Check if the insurance plan is active
-    if (!plan.isActive()) {
-        throw new AllExceptions.InactivePlanException("The insurance plan is not active.");
-    }
-
-	
-	InsuranceScheme scheme = new InsuranceScheme();
-	scheme.setInsuranceScheme(insuranceSchemeDto.getInsuranceScheme());
-	scheme.setMinimumPolicyTerm(insuranceSchemeDto.getMinimumPolicyTerm());
-	scheme.setMaximumPolicyTerm(insuranceSchemeDto.getMaximumPolicyTerm());
-	scheme.setMinimumAge(insuranceSchemeDto.getMinimumAge());
-	scheme.setMaximumAge(insuranceSchemeDto.getMaximumAge());
-	scheme.setMinimumInvestmentAmount(insuranceSchemeDto.getMinimumInvestmentAmount());
-	scheme.setMaximumInvestmentAmount(insuranceSchemeDto.getMaximumInvestmentAmount());
-	scheme.setProfitRatio(insuranceSchemeDto.getProfitRatio());
-	scheme.setSchemeImage(insuranceSchemeDto.getSchemeImage());
-	scheme.setNewRegistrationCommission(insuranceSchemeDto.getNewRegistrationCommission());
-	scheme.setInstallmentPaymentCommission(insuranceSchemeDto.getInstallmentPaymentCommission());
-	scheme.setDescription(insuranceSchemeDto.getDescription());
-
-	 plan = insurancePlanRepository.findById(insuranceSchemeDto.getInsurancePlanId()).orElseThrow();
-	scheme.setInsurancePlan(plan);
-
-	insuranceSchemeRepository.save(scheme);
-	return "Insurance Scheme created successfully.";
-}
+//@Override
+//public String (InsuranceSchemeDto insuranceSchemeDto) {
+//	
+//	// Fetch the insurance plan by its ID
+//    InsurancePlan plan = insurancePlanRepository.findById(insuranceSchemeDto.getInsurancePlanId())
+//            .orElseThrow(() -> new AllExceptions.PlanNotFoundException("Insurance plan not found"));
+//
+//    // Check if the insurance plan is active
+//    if (!plan.isActive()) {
+//        throw new AllExceptions.InactivePlanException("The insurance plan is not active.");
+//    }
+//
+//	
+//	InsuranceScheme scheme = new InsuranceScheme();
+//	scheme.setInsuranceScheme(insuranceSchemeDto.getInsuranceScheme());
+//	scheme.setMinimumPolicyTerm(insuranceSchemeDto.getMinimumPolicyTerm());
+//	scheme.setMaximumPolicyTerm(insuranceSchemeDto.getMaximumPolicyTerm());
+//	scheme.setMinimumAge(insuranceSchemeDto.getMinimumAge());
+//	scheme.setMaximumAge(insuranceSchemeDto.getMaximumAge());
+//	scheme.setMinimumInvestmentAmount(insuranceSchemeDto.getMinimumInvestmentAmount());
+//	scheme.setMaximumInvestmentAmount(insuranceSchemeDto.getMaximumInvestmentAmount());
+//	scheme.setProfitRatio(insuranceSchemeDto.getProfitRatio());
+//	scheme.setSchemeImage(insuranceSchemeDto.getSchemeImage());
+//	scheme.setNewRegistrationCommission(insuranceSchemeDto.getNewRegistrationCommission());
+//	scheme.setInstallmentPaymentCommission(insuranceSchemeDto.getInstallmentPaymentCommission());
+//	scheme.setDescription(insuranceSchemeDto.getDescription());
+//
+//	 plan = insurancePlanRepository.findById(insuranceSchemeDto.getInsurancePlanId()).orElseThrow();
+//	scheme.setInsurancePlan(plan);
+//
+//	insuranceSchemeRepository.save(scheme);
+//	return "Insurance Scheme created successfully.";
+//}
 
 @Override
 public String createInsurancePolicy(InsurancePolicyDto insurancePolicyDto) {
@@ -741,26 +821,9 @@ public String createInsurancePolicy(InsurancePolicyDto insurancePolicyDto) {
 
 
 
-@Override
-public List<InsurancePlanDTO> getAllInsurancePlans() {
-//    return insurancePlanRepository.findAll().stream()
-//            .map(this::convertToInsurancePlanDTO)
-//            .collect(Collectors.toList());
-	 List<InsurancePlan> plans = insurancePlanRepository.findAllWithSchemes();
-     return plans.stream()
-             .map(this::convertToInsurancePlanDTO)
-             .collect(Collectors.toList());
- }
-
 
 @Override
-public List<InsuranceSchemeDto> getAllInsuranceSchemes() {
-    return insuranceSchemeRepository.findAll().stream()
-            .map(this::convertToInsuranceSchemeDto)
-            .collect(Collectors.toList());
-}
 
-@Override
 public List<InsurancePolicyDto> getAllInsurancePolicies() {
     return insurancePolicyRepository.findAll().stream()
             .map(this::convertToInsurancePolicyDto)
@@ -948,6 +1011,24 @@ public String updateInsuranceScheme(Long schemeId, InsuranceSchemeDto insuranceS
     existingScheme.setDescription(insuranceSchemeDto.getDescription());
    // existingScheme.setInsurancePlan(insuranceSchemeDto.getInsurancePlanId());
     existingScheme.setInsurancePlan(insurancePlan);  
+    existingScheme.setActive(insuranceSchemeDto.isActive());
+    
+
+    // Update scheme documents
+    Set<SchemeDocument> newDocuments = insuranceSchemeDto.getSchemeDocument().stream().map(docDto -> {
+        SchemeDocument document = new SchemeDocument();
+        document.setId(docDto.getId());
+        document.setName(docDto.getName());
+        return document;
+    }).collect(Collectors.toSet());
+
+    // Remove existing documents not in the new list
+    existingScheme.getSchemeDocuments().removeIf(existingDoc -> 
+        newDocuments.stream().noneMatch(newDoc -> newDoc.getId().equals(existingDoc.getId())));
+
+    // Add new documents
+    existingScheme.getSchemeDocuments().addAll(newDocuments);
+    
     // Save the updated entity
     insuranceSchemeRepository.save(existingScheme);
 
@@ -958,14 +1039,27 @@ public String updateInsuranceScheme(Long schemeId, InsuranceSchemeDto insuranceS
 
 @Override
 @Transactional
-public boolean deactivateInsurancePlan(Long id) {
-    return insurancePlanRepository.findById(id)
-            .map(plan -> {
-                plan.setActive(false); // Deactivate the plan
-                insurancePlanRepository.save(plan); // Save the updated plan
-                return true; // Convert to DTO
-          })
-            .orElse(false); // Return null if not found
+public void deactivateInsurancePlan(Long id) {
+//    return insurancePlanRepository.findById(id)
+//            .map(plan -> {
+//                plan.setActive(false); // Deactivate the plan
+//                insurancePlanRepository.save(plan); // Save the updated plan
+//                return true; // Convert to DTO
+//          })
+//            .orElse(false); // Return null if not found
+	
+        // Fetch the insurance plan
+	InsurancePlan plan = insurancePlanRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Insurance Plan with ID: " + id + " not found"));
+
+        plan.setActive(false);
+        insurancePlanRepository.save(plan);
+
+        List<InsuranceScheme> schemes = insuranceSchemeRepository.findByInsurancePlan(plan);
+        for (InsuranceScheme scheme : schemes) {
+            scheme.setActive(false);
+        }
+        insuranceSchemeRepository.saveAll(schemes);
 }
 
 // Other service methods...
@@ -977,17 +1071,28 @@ private InsurancePlanDTO convertToDTO(InsurancePlan insurancePlan) {
 
 
 @Override
-public boolean activateInsurancePlan(Long id) {
-	return insurancePlanRepository.findById(id)
-            .map(plan -> {
-                plan.setActive(true); // Activate the plan
-                insurancePlanRepository.save(plan); // Save the updated plan
-                return true; // Indicate success
-            })
-            .orElse(false); 
+public void activateInsurancePlan(Long id) {
+//	return insurancePlanRepository.findById(id)
+//            .map(plan -> {
+//                plan.setActive(true); // Activate the plan
+//                insurancePlanRepository.save(plan); // Save the updated plan
+//                return true; // Indicate success
+//            })
+//            .orElse(false); 
+	 // Fetch the insurance plan
+	InsurancePlan plan = insurancePlanRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Insurance Plan with ID: " + id + " not found"));
 
+        plan.setActive(true);
+        insurancePlanRepository.save(plan);
 
-}
+        List<InsuranceScheme> schemes = insuranceSchemeRepository.findByInsurancePlan(plan);
+        for (InsuranceScheme scheme : schemes) {
+            scheme.setActive(true);
+        }
+        insuranceSchemeRepository.saveAll(schemes);
+    }
+
 
 
 
@@ -1147,24 +1252,511 @@ public List<InsuranceSchemeDto> getSchemesByPlan(Long planId) {
             .collect(Collectors.toList());
 }
 
-//private InsuranceSchemeDto convertToInsuranceSchemeDto(InsuranceScheme scheme) {
-//    InsuranceSchemeDto dto = new InsuranceSchemeDto();
-//    dto.setInsuranceSchemeId(scheme.getInsuranceSchemeId());
-//    dto.setInsuranceScheme(scheme.getInsuranceScheme());
-//    dto.setMinimumPolicyTerm(scheme.getMinimumPolicyTerm());
-//    dto.setMaximumPolicyTerm(scheme.getMaximumPolicyTerm());
-//    dto.setMinimumAge(scheme.getMinimumAge());
-//    dto.setMaximumAge(scheme.getMaximumAge());
-//    dto.setMinimumInvestmentAmount(scheme.getMinimumInvestmentAmount());
-//    dto.setMaximumInvestmentAmount(scheme.getMaximumInvestmentAmount());
-//    dto.setProfitRatio(scheme.getProfitRatio());
-//    dto.setSchemeImage(scheme.getSchemeImage());
-//    dto.setNewRegistrationCommission(scheme.getNewRegistrationCommission());
-//    dto.setInstallmentPaymentCommission(scheme.getInstallmentPaymentCommission());
-//    dto.setDescription(scheme.getDescription());
-//    dto.setInsurancePlanId(scheme.getInsurancePlan().getInsurancePlanId());
-//    return dto;
+
+
+@Override
+public void deactivateAgent(Long id) {
+	
+	 Agent agent = agentRepository.findById(id)
+	            .orElseThrow(() -> new IllegalArgumentException("Invalid agent ID"));
+	        agent.setActive(false);
+	        agentRepository.save(agent);
+	
+}
+
+
+@Override
+public PagedResponse<CustomerResponseDto> getAllCustomers(int page, int size) {
+    Pageable pageable = PageRequest.of(page, size);
+    Page<Customer> customerPage = customerRepository.findAll(pageable);
+
+    List<CustomerResponseDto> customerResponseDtos = customerPage.getContent().stream()
+            .map(this::convertToDto)
+            .collect(Collectors.toList());
+
+    return new PagedResponse<>(
+            customerResponseDtos,
+            customerPage.getNumber(),
+            customerPage.getSize(),
+            customerPage.getTotalElements(),
+            customerPage.getTotalPages(),
+            customerPage.isLast()
+    );
+}
+
+private CustomerResponseDto convertToDto(Customer customer) {
+    CustomerResponseDto dto = new CustomerResponseDto();
+    BeanUtils.copyProperties(customer, dto);
+    if (customer.getCity() != null) {
+        dto.setCityName(customer.getCity().getCity_name()); // Adjust according to your City entity
+    }
+    return dto;
+}
+
+
+
+@Override
+public String createInsuranceScheme(long insurancePlanId, InsuranceSchemeDto insuranceSchemeDto) {
+  // Fetch the insurance plan
+  InsurancePlan insurancePlan = insurancePlanRepository.findById(insurancePlanId)
+      .orElseThrow(() -> new AllExceptions.PlanNotFoundException("Insurance Plan with ID: " + insurancePlanId + " not found"));
+  
+//Check if the insurance plan is active
+  if (!insurancePlan.isActive()) {
+      throw new AllExceptions.PlanNotFoundException("Insurance Plan with ID: " + insurancePlanId + " is not active. Scheme creation is not allowed.");
+  }
+
+  // Create a new insurance scheme and set its properties
+  InsuranceScheme insuranceScheme = new InsuranceScheme();
+  insuranceScheme.setInsuranceScheme(insuranceSchemeDto.getInsuranceScheme());
+  insuranceScheme.setDescription(insuranceSchemeDto.getDescription());
+  insuranceScheme.setMinimumPolicyTerm(insuranceSchemeDto.getMinimumPolicyTerm());
+  insuranceScheme.setMaximumPolicyTerm(insuranceSchemeDto.getMaximumPolicyTerm());
+  insuranceScheme.setMinimumAge(insuranceSchemeDto.getMinimumAge());
+  insuranceScheme.setMaximumAge(insuranceSchemeDto.getMaximumAge());
+  insuranceScheme.setMinimumInvestmentAmount(insuranceSchemeDto.getMinimumInvestmentAmount());
+  insuranceScheme.setMaximumInvestmentAmount(insuranceSchemeDto.getMaximumInvestmentAmount());
+  insuranceScheme.setProfitRatio(insuranceSchemeDto.getProfitRatio());
+  insuranceScheme.setNewRegistrationCommission(insuranceSchemeDto.getNewRegistrationCommission());
+  insuranceScheme.setInstallmentPaymentCommission(insuranceSchemeDto.getInstallmentPaymentCommission());
+  insuranceScheme.setActive(true);
+
+  // Set the image (file name) in the scheme
+  insuranceScheme.setSchemeImage(insuranceSchemeDto.getSchemeImage());
+
+  // Set scheme documents (converting DTO to entity)
+  System.out.println(insuranceSchemeDto.getSchemeDocument());
+  Set<SchemeDocument> schemeDocuments = insuranceSchemeDto.getSchemeDocument().stream().map(docDto -> {
+    SchemeDocument doc = new SchemeDocument();
+    //doc.setId(docDto.getId());
+    doc.setName(docDto.getName());
+    doc=schemeDocumentRepository.save(doc);
+    return doc;
+  }).collect(Collectors.toSet());
+  insuranceScheme.setSchemeDocuments(schemeDocuments);
+//  
+
+  // Associate the insurance scheme with the plan
+  insuranceScheme.setInsurancePlan(insurancePlan);
+
+  // Save the insurance scheme
+  insuranceSchemeRepository.save(insuranceScheme);
+
+  return "Insurance Scheme created successfully!";
+}
+
+
+
+@Override
+public PagedResponse<InsuranceSchemeDto> getAllSchemes(int page, int size, String sortBy, String direction) {
+  Sort sort = direction.equalsIgnoreCase(Sort.Direction.DESC.name()) ? Sort.by(sortBy).descending()
+      : Sort.by(sortBy).ascending();
+  PageRequest pageable = PageRequest.of(page, size, sort);
+  Page<InsuranceScheme> schemePage = insuranceSchemeRepository.findAll(pageable);
+
+  List<InsuranceSchemeDto> schemeResponseList = schemePage.getContent().stream().map(scheme -> {
+    InsuranceSchemeDto schemeDto = new InsuranceSchemeDto();
+    schemeDto.setInsuranceSchemeId(scheme.getInsuranceSchemeId());
+    schemeDto.setInsuranceScheme(scheme.getInsuranceScheme());
+    schemeDto.setDescription(scheme.getDescription());
+    schemeDto.setMinimumPolicyTerm(scheme.getMinimumPolicyTerm());
+    schemeDto.setMaximumPolicyTerm(scheme.getMaximumPolicyTerm());
+    schemeDto.setMinimumAge(scheme.getMinimumAge());
+    schemeDto.setMaximumAge(scheme.getMaximumAge());
+    schemeDto.setMinimumInvestmentAmount(scheme.getMinimumInvestmentAmount());
+    schemeDto.setMaximumInvestmentAmount(scheme.getMaximumInvestmentAmount());
+    schemeDto.setProfitRatio(scheme.getProfitRatio());
+    schemeDto.setNewRegistrationCommission(scheme.getNewRegistrationCommission());
+    schemeDto.setInstallmentPaymentCommission(scheme.getInstallmentPaymentCommission());
+    schemeDto.setActive(scheme.isActive());
+    schemeDto.setSchemeImage(scheme.getSchemeImage());
+    schemeDto.setInsurancePlanId(scheme.getInsurancePlan().getInsurancePlanId());
+
+    // Set scheme documents (converting entity to DTO)
+    Set<SchemeDocumentDto> schemeDocumentsDto = scheme.getSchemeDocuments().stream().map(doc -> {
+      SchemeDocumentDto docDto = new SchemeDocumentDto();
+      docDto.setId(doc.getId());
+      docDto.setName(doc.getName());
+      return docDto;
+    }).collect(Collectors.toSet());
+    schemeDto.setSchemeDocument(schemeDocumentsDto);
+
+    return schemeDto;
+  }).collect(Collectors.toList());
+
+  return new PagedResponse<>(schemeResponseList, schemePage.getNumber(), schemePage.getSize(),
+      schemePage.getTotalElements(), schemePage.getTotalPages(), schemePage.isLast());
+}
+
+
+
+@Override
+public PagedResponse<InsuranceSchemeDto> getAllSchemesByPlanId(Long planId, int page, int size, String sortBy,
+    String direction) {
+  InsurancePlan plan = insurancePlanRepository.findById(planId)
+      .orElseThrow(() -> new AllExceptions.PlanNotFoundException("Insurance Plan with ID: " + planId + " not found"));
+
+  Sort sort = direction.equalsIgnoreCase(Sort.Direction.DESC.name()) ? Sort.by(sortBy).descending()
+      : Sort.by(sortBy).ascending();
+  PageRequest pageable = PageRequest.of(page, size, sort);
+  Page<InsuranceScheme> schemePage = insuranceSchemeRepository.findAllByInsurancePlan(plan, pageable);
+
+  List<InsuranceSchemeDto> schemeResponseList = schemePage.getContent().stream().map(scheme -> {
+    InsuranceSchemeDto schemeDto = new InsuranceSchemeDto();
+    schemeDto.setInsuranceSchemeId(scheme.getInsuranceSchemeId());
+    schemeDto.setInsuranceScheme(scheme.getInsuranceScheme());
+    schemeDto.setDescription(scheme.getDescription());
+    schemeDto.setMinimumPolicyTerm(scheme.getMinimumPolicyTerm());
+    schemeDto.setMaximumPolicyTerm(scheme.getMaximumPolicyTerm());
+    schemeDto.setMinimumAge(scheme.getMinimumAge());
+    schemeDto.setMaximumAge(scheme.getMaximumAge());
+    schemeDto.setMinimumInvestmentAmount(scheme.getMinimumInvestmentAmount());
+    schemeDto.setMaximumInvestmentAmount(scheme.getMaximumInvestmentAmount());
+    schemeDto.setProfitRatio(scheme.getProfitRatio());
+    schemeDto.setNewRegistrationCommission(scheme.getNewRegistrationCommission());
+    schemeDto.setInstallmentPaymentCommission(scheme.getInstallmentPaymentCommission());
+    schemeDto.setActive(scheme.isActive());
+    schemeDto.setSchemeImage(scheme.getSchemeImage());
+    schemeDto.setInsurancePlanId(scheme.getInsurancePlan().getInsurancePlanId());
+
+    // Set scheme documents (converting entity to DTO)
+    Set<SchemeDocumentDto> schemeDocumentsDto = scheme.getSchemeDocuments().stream().map(doc -> {
+      SchemeDocumentDto docDto = new SchemeDocumentDto();
+      docDto.setId(doc.getId());
+      docDto.setName(doc.getName());
+      return docDto;
+    }).collect(Collectors.toSet());
+   schemeDto.setSchemeDocument(schemeDocumentsDto);
+
+    return schemeDto;
+  }).collect(Collectors.toList());
+
+  return new PagedResponse<>(schemeResponseList, schemePage.getNumber(), schemePage.getSize(),
+      schemePage.getTotalElements(), schemePage.getTotalPages(), schemePage.isLast());
+}
+
+
+
+@Override
+public CustomerResponseDto findCustomerByid(long customerId) {
+	Customer customer = customerRepository.findById(customerId)
+	           .orElseThrow(() -> new RuntimeException("Customer not found with id: " + customerId));
+	 return convertCustomerToCustomerResponseDto(customer);
+}
+private CustomerResponseDto convertCustomerToCustomerResponseDto(Customer customer) {
+	CustomerResponseDto customerDto = new CustomerResponseDto();
+
+
+	customerDto.setFirstName(customer.getFirstName());
+
+     customerDto.setLastName(customer.getLastName());
+	
+	customerDto.setActive(customer.isActive());
+
+	customerDto.setDob(customer.getDob());
+	customerDto.setPhoneNumber(customer.getPhoneNumber());
+   
+
+
+    return customerDto;
+}
+
+
+
+@Override
+public Optional<InsurancePlan> findById(Long id) {
+    return insurancePlanRepository.findById(id);
+}
+
+
+
+@Override
+public PagedResponse<InsurancePlanDTO> getAllPlans(int page, int size, String sortBy, String direction) {
+	// Define the sorting order
+    Sort sort = direction.equalsIgnoreCase(Sort.Direction.DESC.name()) ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+    Pageable pageable = PageRequest.of(page, size, sort);
+
+    // Fetch the paged data from the repository
+    Page<InsurancePlan> planPage = insurancePlanRepository.findAll(pageable);
+
+
+    // Convert entities to DTOs
+    List<InsurancePlanDTO> planDTOs = planPage.getContent().stream()
+            .map(this::convertToInsurancePlanDTO)
+            .collect(Collectors.toList());
+
+    // Build and return the paged response
+    return new PagedResponse<>(
+            planDTOs,
+            page,
+            size,
+            planPage.getTotalElements(),
+            planPage.getTotalPages(),
+            planPage.isLast()
+    );
+}
+
+
+
+@Override
+public List<InsurancePlanDTO> getAllInsurancePlans() {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+
+
+@Override
+public PaymentTax getPaymentTax() {
+  return paymentTaxRepository.findFirstByOrderByIdAsc().orElse(new PaymentTax());
+}
+
+// Set or update the Payment Tax
+@Override
+public void setPaymentTax(Long paymentTaxValue) {
+  Optional<PaymentTax> existingTax = paymentTaxRepository.findFirstByOrderByIdAsc();
+
+  if (existingTax.isPresent()) {
+    // Update the existing tax
+    PaymentTax paymentTax = existingTax.get();
+    paymentTax.setPaymentTax(paymentTaxValue);
+    paymentTaxRepository.save(paymentTax);
+  } else {
+    // Create a new Payment Tax entry
+    PaymentTax newPaymentTax = new PaymentTax();
+    newPaymentTax.setPaymentTax(paymentTaxValue);
+    paymentTaxRepository.save(newPaymentTax);
+  }
+}
+
+
+
+@Override
+public double getInstallmentAmountByPolicyId(long policyId) {
+    InsurancePolicy policy = insurancePolicyRepository.findById(policyId)
+            .orElseThrow(() -> new APIException(HttpStatus.NOT_FOUND, "Policy not found with ID: " + policyId));
+    
+    int totalInstallments = (policy.getPolicyTerm() * 12) / policy.getInstallmentPeriod();
+    return policy.getPremiumAmount() / totalInstallments; // Calculate the installment amount
+}
+
+
+
+@Override
+public List<InsurancePlanDTO> findInsurancePlansByName(String name) {
+	 List<InsurancePlan> plans = insurancePlanRepository.findByNameContainingIgnoreCase(name);
+
+     // Convert List of InsurancePlan entities to List of InsurancePlanDTO
+     return plans.stream()
+                 .map(this::convertToDto)  // Convert each InsurancePlan to InsurancePlanDTO
+                 .collect(Collectors.toList());
+}
+//Convert entity to DTO
+private InsurancePlanDTO convertToDto(InsurancePlan plan) {
+    InsurancePlanDTO dto = new InsurancePlanDTO();
+    dto.setInsurancePlanId(plan.getInsurancePlanId());
+    dto.setName(plan.getName());
+  
+    dto.setActive(plan.isActive());
+    // Add other fields as necessary
+    return dto;
+}
+
+
+@Override
+public AgentResponseDto getAgentById(Long agentId) {
+	 Agent agent = agentRepository.findById(agentId)
+	            .orElseThrow(() -> new ResourceNotFoundException("Agent no found"));
+
+	    // Convert the Agent entity to AgentResponseDto
+	    return convertToAgentResponseDto(agent);
+}
+
+
+
+@Override
+public PagedResponse<AgentResponseDto> getAgentsByActiveStatus(boolean active, int page, int size, String sortBy,
+		String direction) {
+	Pageable pageable = PageRequest.of(page, size, Sort.Direction.fromString(direction), sortBy);
+    Page<Agent> agentsPage = agentRepository.findByIsActive(active, pageable);
+
+    List<AgentResponseDto> agentDtos = agentsPage.getContent().stream()
+        .map(this::convertToAgentResponseDto)
+        .collect(Collectors.toList());
+
+    return new PagedResponse<>(
+            agentDtos,
+            agentsPage.getNumber(),
+            agentsPage.getSize(),
+            agentsPage.getTotalElements(),
+            agentsPage.getTotalPages(),
+            agentsPage.isLast()
+    );
+}
+private AgentResponseDto convertToAgentResponseDto(Agent agent) {
+    AgentResponseDto agentDto = new AgentResponseDto();
+
+    // Set basic agent fields
+    agentDto.setAgentId(agent.getAgentId());
+    agentDto.setName(agent.getFirstName()  + agent.getLastName());
+    agentDto.setPhoneNumber(agent.getPhoneNumber());
+    agentDto.setActive(agent.isActive());
+    
+    
+
+   // Set user email if user entity is available
+    if (agent.getUser() != null) {
+        agentDto.setEmail(agent.getUser().getEmail());
+    }
+
+    return agentDto;
+}
+
+
+
+@Override
+public PagedResponse<EmployeeResponseDto> getEmployeesByActiveStatus(boolean active, int page, int size, String sortBy,
+		String direction) {
+	Pageable pageable = PageRequest.of(page, size, Sort.Direction.fromString(direction), sortBy);
+    Page<Employee> employeesPage = employeeRepository.findByIsActive(active, pageable);
+
+    List<EmployeeResponseDto> employeeDtos = employeesPage.getContent().stream()
+        .map(this::convertToEmployeeResponseDto)
+        .collect(Collectors.toList());
+
+    return new PagedResponse<>(
+            employeeDtos,
+            employeesPage.getNumber(),
+            employeesPage.getSize(),
+            employeesPage.getTotalElements(),
+            employeesPage.getTotalPages(),
+            employeesPage.isLast()
+    );
+}
+private EmployeeResponseDto convertToEmployeeResponseDto(Employee employee) {
+    EmployeeResponseDto employeeDto = new EmployeeResponseDto();
+
+    employeeDto.setEmployeeId(employee.getEmployeeId());
+    employeeDto.setFirstName(employee.getFirstName());
+    employeeDto.setLastName(employee.getLastName());
+    employeeDto.setActive(employee.isActive());
+
+    // Set user details if available
+    if (employee.getUser() != null) {
+        employeeDto.setEmail(employee.getUser().getEmail());
+    }
+
+    return employeeDto;
+}
+
+
+
+@Override
+public List<DocumentType> findAll() {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+
+
+@Override
+public void deactivateCustomer(Long id) {
+	 Customer employee = customerRepository.findById(id)
+	            .orElseThrow(() -> new IllegalArgumentException("Invalid employee ID"));
+	        employee.setActive(false);
+	        customerRepository.save(employee);
+	
+}
+
+
+@Override 
+public long getEmployeeCount() { 
+    return employeeRepository.count(); 
+} 
+ 
+@Override 
+public long getAgentCount() { 
+    return agentRepository.count(); 
+} 
+ 
+@Override 
+public long getInsurancePlanCount() { 
+    return insurancePlanRepository.count(); 
+} 
+ 
+@Override 
+public long getInsuranceSchemeCount() { 
+    return insuranceSchemeRepository.count(); 
+} 
+ 
+@Override 
+public long getCityCount() { 
+    return cityRepository.count(); 
+} 
+ 
+@Override 
+public long getStateCount() { 
+    return stateRepository.count(); 
+} 
+ 
+@Override 
+public long getCustomerCount() { 
+    return customerRepository.count(); 
+} 
+ 
+@Override 
+public long getTaxSettingsCount() { 
+    return taxSettingRepository.count(); 
+}
+
+
+@Override 
+public void deactivateScheme(Long id) { 
+    InsuranceScheme scheme = insuranceSchemeRepository.findById(id) 
+            .orElseThrow(() -> new IllegalArgumentException("Scheme not found with ID: " + id)); 
+    scheme.setActive(false); // Set active status to false 
+    insuranceSchemeRepository.save(scheme); 
+}
+
+@Override 
+public void activateScheme(Long id) { 
+    InsuranceScheme scheme = insuranceSchemeRepository.findById(id) 
+            .orElseThrow(() -> new IllegalArgumentException("Scheme not found with ID: " + id)); 
+    scheme.setActive(true); // Assuming you have an active field in your entity 
+    insuranceSchemeRepository.save(scheme); 
+} 
+
+
+////Method to find insurance plans by name
+//public List<InsurancePlanDTO> findInsurancePlansByName(String name) {
+//    List<InsurancePlan> insurancePlans = insurancePlanRepository.findByNameContainingIgnoreCase(name);
+//    return insurancePlans.stream().map(this::mapToDto).collect(Collectors.toList());
 //}
+
+//private InsurancePlanDTO mapToDto(InsurancePlan insurancePlan) {
+//    // Map InsurancePlan entity to InsurancePlanDTO
+//    return new InsurancePlanDTO(
+//        insurancePlan.getId(),                // Map the ID field
+//        insurancePlan.getName(),              // Map the name field
+//        insurancePlan.isActive(),             // Map the active status
+//        insurancePlan.getInsuranceSchemes().stream()  // Map the list of InsuranceScheme entities to DTOs
+//            .map(this::mapSchemeToDto)  // Assuming there is a method to map InsuranceScheme to InsuranceSchemeDto
+//            .collect(Collectors.toList())    // Collect the mapped InsuranceSchemes to a list
+//    );
+//}
+//
+//// Helper method to map InsuranceScheme to InsuranceSchemeDto
+//private InsuranceSchemeDto mapSchemeToDto(InsuranceScheme scheme) {
+//    return new InsuranceSchemeDto(
+//        scheme.getId(),
+//        scheme.getName(),
+//        scheme.getDescription(),
+//        scheme.getMinInvestment(),
+//        scheme.getMaxInvestment(),
+//        scheme.getActive()
+//    );
+//}
+
 
 
 

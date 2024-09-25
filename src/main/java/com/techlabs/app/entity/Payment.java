@@ -17,27 +17,32 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Entity
 public class Payment {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+	 @Id
+	  @GeneratedValue(strategy = GenerationType.IDENTITY)
+	  private Long id;
 
-  @Column(nullable = false)
-  private String paymentType;
+	  @Column(nullable = false)
+	  private String paymentType;
 
-  @Column(nullable = false)
-  private Double amount;
+	  @Column(nullable = false)
+	  private long amount;
 
-  @Column(nullable = false)
-  private LocalDateTime paymentDate = LocalDateTime.now();
+	  @Column(nullable = false)
+	  private LocalDateTime paymentDate = LocalDateTime.now();
 
-  @Column(nullable = false)
-  private Double tax;
+	  @Column(nullable = false)
+	  private Double tax;
 
-  @Column(nullable = false)
-  private Double totalPayment;
+	  @Column(nullable = false)
+	  private Double totalPayment;
 
-  @Column(nullable = false)
-  private String paymentStatus = PayementStatus.UNPAID.name();
+	//  @Column(nullable = false)
+	//  private String paymentStatus = PaymentStatus.UNPAID.name();
 
-  
+	  @Column(nullable = false)
+	  private String paymentStatus;
+
+	  @ManyToOne(fetch = FetchType.LAZY)
+	  @JoinColumn(name = "insurance_policy_id")
+	  private InsurancePolicy policy;
 }

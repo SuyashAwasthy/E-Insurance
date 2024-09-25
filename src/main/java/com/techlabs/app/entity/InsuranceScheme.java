@@ -3,6 +3,10 @@ package com.techlabs.app.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.List;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Data
@@ -33,11 +37,21 @@ public class InsuranceScheme {
 
     @ManyToOne
     @JoinColumn(name = "insurance_plan_id")
+    @JsonBackReference
     private InsurancePlan insurancePlan;
 
     @OneToMany(mappedBy = "insuranceScheme", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<InsurancePolicy> insurancePolicies;
+    
 
+    @Column(nullable = false)
+    private boolean active = true; // Set active to true by default
+
+
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinTable(name = "scheme_documents_mapping", joinColumns = @JoinColumn(name = "insurance_scheme_id"), inverseJoinColumns = @JoinColumn(name = "scheme_document_id"))
+    private Set<SchemeDocument> schemeDocuments;
 	
 	
    

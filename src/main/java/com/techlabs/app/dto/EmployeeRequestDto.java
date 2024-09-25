@@ -31,7 +31,7 @@ public class EmployeeRequestDto {
 
 
 
-    private boolean isActive=true;
+    private Boolean isActive=true;
 
 
 

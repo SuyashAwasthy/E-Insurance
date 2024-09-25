@@ -15,7 +15,9 @@ public class PendingVerification {
     private long id;
     @Column(name = "customer_id")
     private long customerId;
+    @Column(unique = true)
     private String panCard;
+    @Column(unique = true)
     private String aadhaarCard;
 
     private boolean verified = false;

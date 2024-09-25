@@ -361,7 +361,7 @@ public class StripeService {
                 // Save payment details
                 Payment payment = new Payment();
                 payment.setPaymentType("Stripe");
-                payment.setAmount(chargeRequest.getAmount());
+              //  payment.setAmount(chargeRequest.getAmount());
                 payment.setTax(0.0); // Assume tax is 0 for simplicity
                 payment.setTotalPayment(chargeRequest.getAmount());
                 payment.setPaymentStatus(PayementStatus.PAID.name());

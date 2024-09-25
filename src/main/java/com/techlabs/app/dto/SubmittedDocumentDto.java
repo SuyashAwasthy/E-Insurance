@@ -7,5 +7,6 @@ public class SubmittedDocumentDto {
 private String documentName;
 private String documentStatus;
 private String documentImage;
+private Long id;
 
 }

@@ -25,7 +25,15 @@ public class SubmittedDocument {
     @Column(nullable = false)
     private String documentStatus=DocumentStatus.PENDING.name();
 
-    @NotBlank
-    @Column(nullable = false)
+    @Lob
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String documentImage;
+    
+//    @ManyToOne
+//    @JoinColumn(name = "customer_id", nullable = false) // Foreign key column
+//    private Customer customer; // Link to the Customer entity
+
+    @ManyToOne
+    @JoinColumn(name = "insurance_policy_id", nullable = false)
+    private InsurancePolicy insurancePolicy;
 }

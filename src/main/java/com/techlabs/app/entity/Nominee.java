@@ -24,9 +24,9 @@ public class Nominee {
     @Column(nullable = false)
     private String nomineeName;
 
-    @NotBlank(message = "Relation status is required")
-    @Column(nullable = false)
-    private String relationStatus;
+//    @NotBlank(message = "Relation status is required")
+//    @Column(nullable = false)
+    private RelationStatus relationStatus;
     
 //  @ManyToOne(cascade = CascadeType.ALL,fetch=FetchType.LAZY)
 //  @JoinColumn(name = "insurance_policy_id")

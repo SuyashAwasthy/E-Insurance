@@ -6,7 +6,9 @@ import lombok.Data;
 public class EmployeeResponseDto {
 
     private Long employeeId;
-    private String name;
+    private String firstName;
+    private String lastName;
+    
     private boolean isActive;
 
     private Long userId;
@@ -20,8 +22,8 @@ public class EmployeeResponseDto {
   //  private Long stateId;
     //private String stateName;
 
-    private String lastName;
-    
+   
+   
     // Getters and Setters
 
    

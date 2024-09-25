@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.itextpdf.text.DocumentException;
 import com.techlabs.app.service.ReportService;
 
 @RestController 
@@ -40,7 +41,7 @@ public class ReportController {
  
     @GetMapping("/customer-report") 
     public ResponseEntity<byte[]> generateCustomerReport(@RequestParam("startDate") LocalDate startDate, 
-                                                         @RequestParam("endDate") LocalDate endDate) { 
+                                                         @RequestParam("endDate") LocalDate endDate) throws DocumentException { 
         byte[] pdfContent = reportService.generateCustomerReport(startDate, endDate); 
         HttpHeaders headers = new HttpHeaders(); 
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=customer_report.pdf"); 

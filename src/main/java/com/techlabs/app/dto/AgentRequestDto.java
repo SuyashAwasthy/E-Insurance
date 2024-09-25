@@ -7,7 +7,9 @@ import lombok.Data;
 
 @Data
 public class AgentRequestDto {
-
+	
+	private Long id;
+	
     @NotBlank
     private String firstName;
     
@@ -32,7 +34,7 @@ public class AgentRequestDto {
     
     private Long city_id;
     
-    private Long state_id;
+//    private Long state_id;
 
 	
 

@@ -1,5 +1,5 @@
 package com.techlabs.app.entity;
 
 public enum RelationStatus {
-    SPOUSE,CHILD,PARENT,OTHER;
+    SPOUSE,CHILD,PARENT,OTHER,SIBLING;
 }

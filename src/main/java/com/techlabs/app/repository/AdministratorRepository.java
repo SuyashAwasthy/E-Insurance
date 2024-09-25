@@ -8,9 +8,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.techlabs.app.entity.Administrator;
+import com.techlabs.app.entity.Agent;
 import com.techlabs.app.entity.User;
 
 @Repository
 public interface AdministratorRepository extends JpaRepository<Administrator, Long> {
 
-}
+//	Optional<User> findByUserDetails(User user);
+	 Optional<Administrator> findByUser(User user);
+
+	 }

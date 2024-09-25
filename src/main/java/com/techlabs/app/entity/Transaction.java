@@ -30,6 +30,11 @@ public class Transaction {
     private String status;  // e.g., SUCCESS, PENDING, FAILED
 
 	
-	
+    @ManyToOne
+    @JoinColumn(name = "agent_id")
+    private Agent agent;
+    
+    private String type;
+
     
 }

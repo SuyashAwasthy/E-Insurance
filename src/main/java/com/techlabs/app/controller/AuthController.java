@@ -1,14 +1,19 @@
 package com.techlabs.app.controller;
 
+import java.io.IOException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.techlabs.app.dto.JWTAuthResponse;
@@ -17,6 +22,8 @@ import com.techlabs.app.dto.RegisterDto;
 import com.techlabs.app.dto.StripeChargeDto;
 import com.techlabs.app.service.AuthService;
 //import com.techlabs.app.service.StripeService;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/E-Insurance/auth")
@@ -66,7 +73,7 @@ public class AuthController {
 
 	// Build Register REST API
 	@PostMapping(value = { "/register", "/signup" })
-	public ResponseEntity<String> register(@RequestBody RegisterDto registerDto) {
+	public ResponseEntity<String> register(@RequestBody RegisterDto registerDto) throws IOException {
 		System.out.println("ADmin registeratiobn");
 
 		logger.trace("A TRACE Message" + registerDto);
@@ -84,4 +91,10 @@ public class AuthController {
 //		return "success";
 //
 //	}
+	@PreAuthorize("hasAnyRole('ADMIN','AGENT','EMPLOYEE','CUSTOMER')")
+	@GetMapping("/user")
+    public boolean validateUserToken(@RequestParam String role,HttpServletRequest request) {
+       role = "ROLE_" + role.toUpperCase();
+        return authService.validateUserToken(request,role);
+    }
 }

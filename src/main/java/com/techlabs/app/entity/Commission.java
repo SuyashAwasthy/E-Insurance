@@ -1,7 +1,10 @@
 package com.techlabs.app.entity; 
  
-import java.time.LocalDateTime; 
- 
+import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.Column; 
 import jakarta.persistence.Entity; 
 import jakarta.persistence.GeneratedValue; 
@@ -23,6 +26,7 @@ public class Commission {
  
     @ManyToOne 
     @JoinColumn(name = "agent_id", nullable = false) 
+    @JsonIgnore
     private Agent agent; 
  
     @ManyToOne 
@@ -37,6 +41,12 @@ public class Commission {
     
     @Column(nullable = false)
     private String CommissionType;
+    
+private double availableCommission;
+	
+	private double updateCommissionBalance;
+    
+    
 
 	
 	

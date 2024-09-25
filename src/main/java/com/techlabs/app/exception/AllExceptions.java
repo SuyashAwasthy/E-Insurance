@@ -122,10 +122,42 @@ public class AllExceptions {
             super(message);
         }
     }
-    public static class InactivePlanException extends RuntimeException {
+ static class InactivePlanException extends RuntimeException {
         private static final long serialVersionUID = 1L;
 
         public InactivePlanException(String message) {
+            super(message);
+        }
+    }
+    
+    public static class CityNotFoundException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        public CityNotFoundException(String message) {
+            super(message);
+        }
+    }
+    
+    public static class FileNameException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        public FileNameException(String message) {
+            super(message);
+        }
+    }
+    
+    public static class IdNotFoundException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        public IdNotFoundException(String message) {
+            super(message);
+        }
+    }
+    
+    public static class WithdrawNotFoundException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        public WithdrawNotFoundException(String message) {
             super(message);
         }
     }

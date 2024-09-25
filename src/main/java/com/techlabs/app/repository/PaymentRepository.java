@@ -13,4 +13,12 @@ public interface PaymentRepository  extends JpaRepository<Payment, Long>{
 
 	List<Payment> findByPaymentDateBetween(LocalDateTime atStartOfDay, LocalDateTime atTime);
 
+
+	//List<Payment> findByInsurancePolicyInsuranceId(long policyId);
+	
+	// Correct the property name to 'policy.insuranceId'
+    List<Payment> findByPolicyInsuranceId(long policyId);
+
+
+
 }

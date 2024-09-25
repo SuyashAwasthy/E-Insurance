@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.techlabs.app.dto.InsuranceSchemeDto;
 
 @Entity
@@ -33,15 +35,11 @@ this.insurancePlanId=insurancePlanId2;
     private boolean active;
 
 
-    
-    @OneToMany(fetch = FetchType.EAGER,mappedBy = "insurancePlan", cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.LAZY,mappedBy = "insurancePlan", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<InsuranceScheme> insuranceSchemes;
 
 
-
 	
 
-	
-	
-    
 }

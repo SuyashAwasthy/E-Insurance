@@ -119,7 +119,7 @@ class Claim {
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   private LocalDateTime date = LocalDateTime.now();
   
-  private String claimedStatus = ClaimStatus.PENDING.name();
+  private String claimedStatus ;//= ClaimStatus.PENDING.name();
   
   @Column(name="is_cancel", nullable=false)
   private boolean isCancel;
@@ -128,9 +128,11 @@ class Claim {
   @JsonIgnore
   private InsurancePolicy policy;
   
-  @ManyToOne(cascade = CascadeType.ALL)
+  @ManyToOne(cascade = CascadeType.ALL,fetch = FetchType.EAGER)
   @JoinColumn(name = "agentId")
   private Agent agent;
+  
+  private String remark; 
   
   public long getClaimId() {
 		// TODO Auto-generated method stub

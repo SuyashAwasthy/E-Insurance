@@ -4,6 +4,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -31,7 +35,8 @@ public class Customer {
 
 	@ManyToMany(cascade = CascadeType.ALL)
 	@JoinTable(name = "customer_insurance_policy", joinColumns = @JoinColumn(name = "customer_id"), inverseJoinColumns = @JoinColumn(name = "insurance_policy_id"))
-	private List<InsurancePolicy> insurancePolicies = new ArrayList<>();
+	@JsonManagedReference
+	 private List<InsurancePolicy> insurancePolicies;
 
 	private boolean isActive = true;
 	private boolean verified = false;
@@ -40,5 +45,4 @@ public class Customer {
     private LocalDate registrationDate;
 
 	
-
 }

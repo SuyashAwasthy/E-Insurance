@@ -1,6 +1,7 @@
 package com.techlabs.app.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -24,5 +25,29 @@ public class EmailServiceImpl implements EmailService{
 		// TODO Auto-generated method stub
 		
 	}
+//	@Override
+//	public boolean sendEmail(String email, String string, String emailContent) {
+//		// TODO Auto-generated method stub
+//		return false;
+//	}
+//	
+	public boolean sendEmail(String recipientEmail, String subject, String content) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("awasthysuyash@gmail.com"); // Sender's email (your Gmail)
+            message.setTo(recipientEmail); // Recipient's email
+            message.setSubject(subject); // Email subject
+            message.setText(content); // Email body
+
+            mailSender.send(message); // Send the email
+
+            // Email sent successfully
+            return true;
+        } catch (MailException e) {
+            // Handle the exception, for example log it
+            System.err.println("Error sending email: " + e.getMessage());
+            return false;
+        }
+    }
 
 }
